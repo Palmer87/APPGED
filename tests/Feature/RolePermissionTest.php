@@ -65,7 +65,7 @@ class RolePermissionTest extends TestCase
     {
         $organization = Organization::factory()->create();
         $user = User::factory()->for($organization)->create();
-                // Assign super-admin role globally (no team)
+        // Assign super-admin role globally (no team)
         // Set team context to the organization
         app(PermissionRegistrar::class)->setPermissionsTeamId($organization->id);
         // Create or retrieve the super-admin role for this organization
