@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             OrganizationSeeder::class,
             GroupSeeder::class,
+            RolePermissionSeeder::class,
         ]);
 
         $organization = Organization::query()->where('slug', 'ged-demo')->firstOrFail();

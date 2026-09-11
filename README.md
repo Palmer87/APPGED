@@ -7,6 +7,18 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## GED SaaS
+
+GED est une application multi-tenant de gestion électronique de documents. L’authentification d’API est préparée avec Laravel Sanctum et les rôles avec Spatie Permission, configuré par organisation.
+
+```bash
+php artisan migrate
+php artisan db:seed
+php artisan test --compact
+```
+
+Voir [la stratégie multi-tenant](docs/multi-tenancy.md) pour les règles d’isolation et les rôles disponibles.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
