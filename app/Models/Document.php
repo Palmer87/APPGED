@@ -47,9 +47,19 @@ class Document extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
     public function versions(): HasMany
     {
         return $this->hasMany(DocumentVersion::class);
+    }
+
+    public function currentVersion(): HasOne
+    {
+        return $this->hasOne(DocumentVersion::class)->latestOfMany('version_number');
     }
 
     public function categories(): BelongsToMany
