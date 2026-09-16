@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DocumentCommentController;
 use App\Http\Controllers\DocumentLifecycleController;
 use App\Http\Controllers\DocumentPreviewController;
 use App\Http\Controllers\DocumentShareController;
+use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowInstanceController;
@@ -15,7 +17,17 @@ Route::get('/', function () {
     return view('welcome');
 });
 
+Route::get('/login', fn () => response()->json(['message' => 'Unauthenticated'], 401))->name('login');
+
 Route::middleware(['auth'])->group(function () {
+    // Dashboard V1
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+    // Document Favorites
+    Route::post('/documents/{document}/favorite', [FavoriteController::class, 'toggle'])
+        ->name('documents.favorite.toggle');
+
     // Document Preview
     Route::get('/documents/{document}/preview', [DocumentPreviewController::class, 'preview'])
         ->name('documents.preview');

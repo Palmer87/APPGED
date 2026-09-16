@@ -135,4 +135,9 @@ class Document extends Model
     {
         return $this->hasMany(DocumentComment::class)->whereNull('parent_id');
     }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(DocumentFavorite::class);
+    }
 }
