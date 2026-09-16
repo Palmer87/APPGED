@@ -7,6 +7,7 @@ use App\Services\NotificationPreferenceService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Inertia\Inertia;
 
 class NotificationController extends Controller
 {
@@ -17,7 +18,7 @@ class NotificationController extends Controller
     /**
      * List paginated notifications for the authenticated user.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): mixed
     {
         $user = $request->user();
         $perPage = max(1, min((int) $request->input('per_page', 25), 100));
@@ -28,7 +29,14 @@ class NotificationController extends Controller
 
         $notifications = $query->latest('created_at')->paginate($perPage);
 
-        return response()->json([
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json([
+                'notifications' => $notifications,
+                'unread_count' => $user->unreadNotifications()->count(),
+            ]);
+        }
+
+        return Inertia::render('Notifications/Index', [
             'notifications' => $notifications,
             'unread_count' => $user->unreadNotifications()->count(),
         ]);
@@ -55,7 +63,7 @@ class NotificationController extends Controller
     /**
      * Mark a specific notification as read.
      */
-    public function markAsRead(Request $request, string $id): JsonResponse
+    public function markAsRead(Request $request, string $id): mixed
     {
         $notification = DatabaseNotification::find($id);
 
@@ -72,6 +80,10 @@ class NotificationController extends Controller
             $notification->markAsRead();
         }
 
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Notification marquée comme lue.');
+        }
+
         return response()->json([
             'message' => 'Notification marked as read',
             'notification' => $notification->fresh(),
@@ -81,9 +93,13 @@ class NotificationController extends Controller
     /**
      * Mark all unread notifications of the authenticated user as read.
      */
-    public function markAllAsRead(Request $request): JsonResponse
+    public function markAllAsRead(Request $request): mixed
     {
         $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Toutes les notifications ont été marquées comme lues.');
+        }
 
         return response()->json([
             'message' => 'All notifications marked as read',
@@ -94,7 +110,7 @@ class NotificationController extends Controller
     /**
      * Delete a specific notification belonging to the authenticated user.
      */
-    public function destroy(Request $request, string $id): JsonResponse
+    public function destroy(Request $request, string $id): mixed
     {
         $notification = DatabaseNotification::find($id);
 
@@ -107,6 +123,10 @@ class NotificationController extends Controller
         }
 
         $notification->delete();
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Notification supprimée.');
+        }
 
         return response()->json([
             'message' => 'Notification deleted successfully',

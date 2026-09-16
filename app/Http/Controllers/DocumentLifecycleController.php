@@ -6,6 +6,8 @@ use App\Models\Document;
 use App\Services\DocumentLifecycleService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DocumentLifecycleController extends Controller
 {
@@ -16,31 +18,43 @@ class DocumentLifecycleController extends Controller
     /**
      * List trashed documents for the current tenant.
      */
-    public function trash(Request $request): JsonResponse
+    public function trash(Request $request): JsonResponse|Response
     {
         $perPage = (int) $request->input('per_page', 15);
         $trashed = $this->lifecycleService->getTrash($request->user(), $perPage);
 
-        return response()->json($trashed);
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json($trashed);
+        }
+
+        return Inertia::render('Trash/Index', ['documents' => $trashed]);
     }
 
     /**
      * List archived documents accessible to the current user.
      */
-    public function archived(Request $request): JsonResponse
+    public function archived(Request $request): JsonResponse|Response
     {
         $perPage = (int) $request->input('per_page', 15);
         $archived = $this->lifecycleService->getArchived($request->user(), $perPage);
 
-        return response()->json($archived);
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json($archived);
+        }
+
+        return Inertia::render('Archive/Index', ['documents' => $archived]);
     }
 
     /**
      * Archive an active document.
      */
-    public function archive(Request $request, Document $document): JsonResponse
+    public function archive(Request $request, Document $document): mixed
     {
         $archived = $this->lifecycleService->archive($request->user(), $document);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Document archivé avec succès.');
+        }
 
         return response()->json([
             'message' => 'Document archived successfully.',
@@ -51,9 +65,13 @@ class DocumentLifecycleController extends Controller
     /**
      * Unarchive an archived document.
      */
-    public function unarchive(Request $request, Document $document): JsonResponse
+    public function unarchive(Request $request, Document $document): mixed
     {
         $unarchived = $this->lifecycleService->unarchive($request->user(), $document);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Document désarchivé avec succès.');
+        }
 
         return response()->json([
             'message' => 'Document unarchived successfully.',
@@ -62,11 +80,15 @@ class DocumentLifecycleController extends Controller
     }
 
     /**
-     * Move a document to trash (soft delete).
+     * Soft delete a document.
      */
-    public function destroy(Request $request, Document $document): JsonResponse
+    public function destroy(Request $request, Document $document): mixed
     {
         $this->lifecycleService->moveToTrash($request->user(), $document);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Document déplacé dans la corbeille.');
+        }
 
         return response()->json([
             'message' => 'Document moved to trash.',
@@ -74,11 +96,15 @@ class DocumentLifecycleController extends Controller
     }
 
     /**
-     * Restore a document from trash.
+     * Restore a soft-deleted document.
      */
-    public function restore(Request $request, Document $document): JsonResponse
+    public function restore(Request $request, Document $document): mixed
     {
         $restored = $this->lifecycleService->restoreFromTrash($request->user(), $document);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Document restauré avec succès.');
+        }
 
         return response()->json([
             'message' => 'Document restored from trash.',
@@ -87,11 +113,15 @@ class DocumentLifecycleController extends Controller
     }
 
     /**
-     * Permanently delete a trashed document and purge files.
+     * Permanently delete a soft-deleted document.
      */
-    public function forceDestroy(Request $request, Document $document): JsonResponse
+    public function forceDestroy(Request $request, Document $document): mixed
     {
         $this->lifecycleService->forceDelete($request->user(), $document);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Document supprimé définitivement.');
+        }
 
         return response()->json([
             'message' => 'Document permanently deleted.',
@@ -99,11 +129,15 @@ class DocumentLifecycleController extends Controller
     }
 
     /**
-     * Empty all trashed documents for the current tenant.
+     * Empty the trash for the current tenant.
      */
-    public function emptyTrash(Request $request): JsonResponse
+    public function emptyTrash(Request $request): mixed
     {
         $count = $this->lifecycleService->emptyTrash($request->user());
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', "Corbeille vidée ({$count} documents supprimés).");
+        }
 
         return response()->json([
             'message' => "Trash emptied successfully. {$count} document(s) permanently deleted.",

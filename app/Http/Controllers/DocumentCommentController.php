@@ -46,13 +46,17 @@ class DocumentCommentController extends Controller
             versionId: $versionId
         );
 
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Commentaire ajouté avec succès.');
+        }
+
         return response()->json($comment, 201);
     }
 
     /**
      * Store a comment explicitly on a specific document version.
      */
-    public function storeVersionComment(StoreDocumentCommentRequest $request, Document $document, DocumentVersion $version): JsonResponse
+    public function storeVersionComment(StoreDocumentCommentRequest $request, Document $document, DocumentVersion $version): mixed
     {
         if ($version->document_id !== $document->id) {
             throw new HttpException(422, 'Version does not belong to this document.');
@@ -65,13 +69,17 @@ class DocumentCommentController extends Controller
             versionId: $version->id
         );
 
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Commentaire de version ajouté avec succès.');
+        }
+
         return response()->json($comment, 201);
     }
 
     /**
      * Reply to an existing root comment.
      */
-    public function reply(ReplyDocumentCommentRequest $request, DocumentComment $comment): JsonResponse
+    public function reply(ReplyDocumentCommentRequest $request, DocumentComment $comment): mixed
     {
         $reply = $this->commentService->reply(
             actor: $request->user(),
@@ -79,13 +87,17 @@ class DocumentCommentController extends Controller
             content: $request->validated('content')
         );
 
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Réponse ajoutée avec succès.');
+        }
+
         return response()->json($reply, 201);
     }
 
     /**
      * Update an existing comment.
      */
-    public function update(UpdateDocumentCommentRequest $request, DocumentComment $comment): JsonResponse
+    public function update(UpdateDocumentCommentRequest $request, DocumentComment $comment): mixed
     {
         $updated = $this->commentService->update(
             actor: $request->user(),
@@ -93,15 +105,23 @@ class DocumentCommentController extends Controller
             content: $request->validated('content')
         );
 
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Commentaire mis à jour.');
+        }
+
         return response()->json($updated);
     }
 
     /**
      * Delete a comment (soft delete).
      */
-    public function destroy(Request $request, DocumentComment $comment): JsonResponse
+    public function destroy(Request $request, DocumentComment $comment): mixed
     {
         $this->commentService->delete($request->user(), $comment);
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Commentaire supprimé.');
+        }
 
         return response()->json(['message' => 'Comment deleted successfully.']);
     }

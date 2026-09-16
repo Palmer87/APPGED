@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreWorkflowRequest;
 use App\Http\Requests\UpdateWorkflowRequest;
 use App\Models\Workflow;
+use App\Models\WorkflowInstance;
 use App\Services\WorkflowService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Inertia\Inertia;
 
 class WorkflowController extends Controller
 {
@@ -19,7 +21,7 @@ class WorkflowController extends Controller
     /**
      * List workflows for the authenticated user's organization.
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request): mixed
     {
         Gate::forUser($request->user())->authorize('viewAny', Workflow::class);
 
@@ -30,7 +32,20 @@ class WorkflowController extends Controller
             ->latest('id')
             ->paginate($perPage);
 
-        return response()->json($workflows);
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
+            return response()->json($workflows);
+        }
+
+        $instances = WorkflowInstance::where('organization_id', $request->user()->organization_id)
+            ->with(['workflow', 'document', 'startedBy', 'currentStep.approverUser', 'currentStep.approverGroup'])
+            ->latest('id')
+            ->take(30)
+            ->get();
+
+        return Inertia::render('Workflows/Index', [
+            'workflows' => $workflows,
+            'instances' => $instances,
+        ]);
     }
 
     /**

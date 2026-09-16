@@ -1,4 +1,5 @@
 import React from 'react';
+import AuthenticatedLayout from '../../Layouts/AuthenticatedLayout';
 
 export default function DashboardIndex({
     user,
@@ -15,35 +16,8 @@ export default function DashboardIndex({
     const formatNumber = (val) => new Intl.NumberFormat('fr-FR').format(val || 0);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 antialiased font-sans">
-            {/* Header */}
-            <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex justify-between items-center">
-                    <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-200 dark:shadow-none">
-                            GED
-                        </div>
-                        <div>
-                            <span className="text-lg font-bold text-slate-900 dark:text-white">Espace Documentaire</span>
-                            <span className="hidden sm:inline-block ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
-                                {organization?.name || 'Organisation'}
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                            🔔 {notifications?.unread_count || 0} non lue(s)
-                        </span>
-                        <div className="text-right hidden sm:block">
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.full_name}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{user?.role}</p>
-                        </div>
-                    </div>
-                </div>
-            </header>
-
-            {/* Main Content */}
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <AuthenticatedLayout title="Tableau de bord">
+            <div className="space-y-8">
                 {/* Greeting & Filters */}
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
                     <div>
@@ -379,7 +353,7 @@ export default function DashboardIndex({
                         )}
                     </div>
                 </div>
-            </main>
-        </div>
+            </div>
+        </AuthenticatedLayout>
     );
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
+use Inertia\Inertia;
 use Spatie\Permission\PermissionRegistrar;
 
 class DashboardController extends Controller
@@ -18,7 +19,7 @@ class DashboardController extends Controller
     /**
      * Display the authenticated user's GED dashboard.
      */
-    public function index(Request $request): JsonResponse|View|Response
+    public function index(Request $request): JsonResponse|View|Response|\Inertia\Response
     {
         $user = $request->user();
 
@@ -38,18 +39,18 @@ class DashboardController extends Controller
 
         $data = $this->dashboardService->getDashboardData($user, $period);
 
-        if ($request->wantsJson() || $request->header('X-Inertia')) {
-            if (function_exists('inertia') && $request->header('X-Inertia')) {
-                return inertia('Dashboard/Index', $data);
-            }
-
+        if ($request->wantsJson() && ! $request->header('X-Inertia')) {
             return response()->json($data);
+        }
+
+        if ($request->header('X-Inertia')) {
+            return Inertia::render('Dashboard/Index', $data);
         }
 
         if (view()->exists('dashboard')) {
             return view('dashboard', $data);
         }
 
-        return response()->json($data);
+        return Inertia::render('Dashboard/Index', $data);
     }
 }

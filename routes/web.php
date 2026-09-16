@@ -8,6 +8,16 @@ use App\Http\Controllers\DocumentPreviewController;
 use App\Http\Controllers\DocumentShareController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Web\CategoryWebController;
+use App\Http\Controllers\Web\DocumentWebController;
+use App\Http\Controllers\Web\FavoriteWebController;
+use App\Http\Controllers\Web\FolderWebController;
+use App\Http\Controllers\Web\MetadataWebController;
+use App\Http\Controllers\Web\ProfileWebController;
+use App\Http\Controllers\Web\RecentWebController;
+use App\Http\Controllers\Web\SearchWebController;
+use App\Http\Controllers\Web\ShareWebController;
+use App\Http\Controllers\Web\TagWebController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowInstanceController;
 use App\Http\Controllers\WorkflowStepController;
@@ -23,6 +33,60 @@ Route::middleware(['auth'])->group(function () {
     // Dashboard V1
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
+
+    // Document Lifecycle (Trash & Archive) - must precede {document} wildcard
+    Route::get('/documents/trash', [DocumentLifecycleController::class, 'trash'])
+        ->name('documents.trash.index');
+    Route::post('/documents/trash/empty', [DocumentLifecycleController::class, 'emptyTrash'])
+        ->name('documents.trash.empty');
+    Route::get('/documents/archived', [DocumentLifecycleController::class, 'archived'])
+        ->name('documents.archived.index');
+
+    // Documents Web
+    Route::get('/documents', [DocumentWebController::class, 'index'])->name('documents.index');
+    Route::post('/documents', [DocumentWebController::class, 'store'])->name('documents.store');
+    Route::get('/documents/{document}', [DocumentWebController::class, 'show'])->name('documents.show');
+    Route::get('/documents/{document}/download', [DocumentWebController::class, 'download'])->name('documents.download');
+    Route::post('/documents/{document}/versions', [DocumentWebController::class, 'storeVersion'])->name('documents.versions.store');
+    Route::get('/documents/{document}/versions/{version}/download', [DocumentWebController::class, 'downloadVersion'])->name('documents.versions.download');
+    Route::post('/documents/{document}/versions/{version}/restore', [DocumentWebController::class, 'restoreVersion'])->name('documents.versions.restore');
+
+    // Folders Web
+    Route::get('/folders', [FolderWebController::class, 'index'])->name('folders.index');
+    Route::post('/folders', [FolderWebController::class, 'store'])->name('folders.store');
+    Route::put('/folders/{folder}', [FolderWebController::class, 'update'])->name('folders.update');
+    Route::delete('/folders/{folder}', [FolderWebController::class, 'destroy'])->name('folders.destroy');
+
+    // Search Web
+    Route::get('/search', [SearchWebController::class, 'index'])->name('search.index');
+
+    // Favorites & Recent Web
+    Route::get('/favorites', [FavoriteWebController::class, 'index'])->name('favorites.index');
+    Route::get('/recent', [RecentWebController::class, 'index'])->name('recent.index');
+
+    // Shares overview
+    Route::get('/shares', [ShareWebController::class, 'index'])->name('shares.index');
+
+    // Admin Web: Categories, Tags, Metadata
+    Route::get('/categories', [CategoryWebController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategoryWebController::class, 'store'])->name('categories.store');
+    Route::put('/categories/{category}', [CategoryWebController::class, 'update'])->name('categories.update');
+    Route::delete('/categories/{category}', [CategoryWebController::class, 'destroy'])->name('categories.destroy');
+
+    Route::get('/tags', [TagWebController::class, 'index'])->name('tags.index');
+    Route::post('/tags', [TagWebController::class, 'store'])->name('tags.store');
+    Route::put('/tags/{tag}', [TagWebController::class, 'update'])->name('tags.update');
+    Route::delete('/tags/{tag}', [TagWebController::class, 'destroy'])->name('tags.destroy');
+
+    Route::get('/metadata', [MetadataWebController::class, 'index'])->name('metadata.index');
+    Route::post('/metadata', [MetadataWebController::class, 'store'])->name('metadata.store');
+    Route::put('/metadata/{metadata}', [MetadataWebController::class, 'update'])->name('metadata.update');
+    Route::delete('/metadata/{metadata}', [MetadataWebController::class, 'destroy'])->name('metadata.destroy');
+
+    // Profile & Preferences
+    Route::get('/profile', [ProfileWebController::class, 'index'])->name('profile.index');
+    Route::put('/profile', [ProfileWebController::class, 'update'])->name('profile.update');
+    Route::put('/profile/preferences', [ProfileWebController::class, 'updatePreferences'])->name('profile.preferences.update');
 
     // Document Favorites
     Route::post('/documents/{document}/favorite', [FavoriteController::class, 'toggle'])
@@ -48,16 +112,7 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/documents/{document}/shares/{share}', [DocumentShareController::class, 'destroy'])
         ->name('documents.shares.destroy');
 
-    // Document Lifecycle (Trash & Archive)
-    Route::get('/documents/trash', [DocumentLifecycleController::class, 'trash'])
-        ->name('documents.trash.index');
-
-    Route::post('/documents/trash/empty', [DocumentLifecycleController::class, 'emptyTrash'])
-        ->name('documents.trash.empty');
-
-    Route::get('/documents/archived', [DocumentLifecycleController::class, 'archived'])
-        ->name('documents.archived.index');
-
+    // Document Lifecycle actions
     Route::post('/documents/{document}/archive', [DocumentLifecycleController::class, 'archive'])
         ->name('documents.archive');
 

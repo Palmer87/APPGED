@@ -79,6 +79,10 @@ class WorkflowInstanceController extends Controller
     {
         $action = $this->workflowService->approve($request->user(), $instance, $request->validated('comment'));
 
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Étape approuvée avec succès.');
+        }
+
         return response()->json([
             'message' => 'Step approved successfully.',
             'action' => $action,
@@ -88,9 +92,13 @@ class WorkflowInstanceController extends Controller
     /**
      * Reject a workflow instance.
      */
-    public function reject(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse
+    public function reject(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
     {
         $action = $this->workflowService->reject($request->user(), $instance, $request->validated('comment'));
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Workflow rejeté.');
+        }
 
         return response()->json([
             'message' => 'Workflow rejected.',
@@ -101,9 +109,13 @@ class WorkflowInstanceController extends Controller
     /**
      * Request correction on a workflow instance.
      */
-    public function requestCorrection(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse
+    public function requestCorrection(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
     {
         $action = $this->workflowService->requestCorrection($request->user(), $instance, $request->validated('comment'));
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Demande de correction transmise.');
+        }
 
         return response()->json([
             'message' => 'Correction requested.',
@@ -114,9 +126,13 @@ class WorkflowInstanceController extends Controller
     /**
      * Resubmit a workflow instance after corrections.
      */
-    public function resubmit(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse
+    public function resubmit(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
     {
         $action = $this->workflowService->resubmit($request->user(), $instance, $request->validated('comment'));
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Workflow soumis à nouveau.');
+        }
 
         return response()->json([
             'message' => 'Workflow resubmitted.',
@@ -127,9 +143,13 @@ class WorkflowInstanceController extends Controller
     /**
      * Cancel an active workflow instance.
      */
-    public function cancel(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse
+    public function cancel(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
     {
         $action = $this->workflowService->cancel($request->user(), $instance, $request->validated('comment'));
+
+        if ($request->header('X-Inertia')) {
+            return back()->with('success', 'Workflow annulé.');
+        }
 
         return response()->json([
             'message' => 'Workflow cancelled.',
