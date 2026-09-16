@@ -57,7 +57,7 @@ class RolePermissionTest extends TestCase
         $this->seed(RolePermissionSeeder::class);
         $this->seed(RolePermissionSeeder::class);
 
-        $this->assertSame(23, Permission::count());
+        $this->assertSame(49, Permission::count());
         $this->assertSame(5, Role::count());
     }
 

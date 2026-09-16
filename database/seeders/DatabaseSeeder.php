@@ -19,6 +19,9 @@ class DatabaseSeeder extends Seeder
             OrganizationSeeder::class,
             GroupSeeder::class,
             RolePermissionSeeder::class,
+            CategorySeeder::class,
+            TagSeeder::class,
+            MetadataDefinitionSeeder::class,
         ]);
 
         $organization = Organization::query()->where('slug', 'ged-demo')->firstOrFail();

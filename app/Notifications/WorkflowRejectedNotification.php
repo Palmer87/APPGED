@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Notifications;
+
+use App\Models\Document;
+use App\Models\User;
+use App\Models\WorkflowInstance;
+use App\Models\WorkflowStep;
+use Illuminate\Notifications\Messages\MailMessage;
+
+class WorkflowRejectedNotification extends BaseGedNotification
+{
+    public const TYPE = 'workflow.rejected';
+
+    public function __construct(
+        public Document $document,
+        public User $actor,
+        public WorkflowInstance $instance,
+        public string $comment,
+        public ?WorkflowStep $step = null
+    ) {}
+
+    public function getType(): string
+    {
+        return self::TYPE;
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        return [
+            'type' => self::TYPE,
+            'title' => 'Document rejeté',
+            'message' => "Le document '{$this->document->name}' a été rejeté par {$this->actor->name}. Motif : {$this->comment}",
+            'document_id' => $this->document->id,
+            'document_name' => $this->document->name,
+            'workflow_instance_id' => $this->instance->id,
+            'step_id' => $this->step?->id,
+            'step_name' => $this->step?->name,
+            'comment' => $this->comment,
+            'actor_id' => $this->actor->id,
+            'actor_name' => $this->actor->name,
+            'url' => "/workflow-instances/{$this->instance->id}",
+        ];
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        return (new MailMessage)
+            ->subject("Document rejeté : {$this->document->name}")
+            ->greeting("Bonjour {$notifiable->name},")
+            ->line("Le document '{$this->document->name}' a été rejeté par {$this->actor->name}.")
+            ->line("Motif : {$this->comment}")
+            ->action('Consulter le document', url("/workflow-instances/{$this->instance->id}"))
+            ->line('Merci d\'utiliser notre service GED.');
+    }
+}

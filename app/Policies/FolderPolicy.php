@@ -4,16 +4,29 @@ namespace App\Policies;
 
 use App\Models\Folder;
 use App\Models\User;
+use App\Services\AccessControlService;
 
 class FolderPolicy
 {
+    public function __construct(
+        protected AccessControlService $aclService
+    ) {}
+
     public function view(User $user, Folder $folder): bool
     {
         if ($user->organization_id !== $folder->organization_id) {
             return false;
         }
 
-        return $user->can('folders.view');
+        if (! $user->can('folders.view')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($folder)) {
+            return $this->aclService->canAccessFolder($user, $folder, 'view');
+        }
+
+        return true;
     }
 
     public function create(User $user): bool
@@ -28,7 +41,15 @@ class FolderPolicy
             return false;
         }
 
-        return $user->can('folders.update');
+        if (! $user->can('folders.update')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($folder)) {
+            return $this->aclService->canAccessFolder($user, $folder, 'update');
+        }
+
+        return true;
     }
 
     public function delete(User $user, Folder $folder): bool
@@ -37,7 +58,15 @@ class FolderPolicy
             return false;
         }
 
-        return $user->can('folders.delete');
+        if (! $user->can('folders.delete')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($folder)) {
+            return $this->aclService->canAccessFolder($user, $folder, 'delete');
+        }
+
+        return true;
     }
 
     public function share(User $user, Folder $folder): bool
@@ -46,6 +75,14 @@ class FolderPolicy
             return false;
         }
 
-        return $user->can('folders.share');
+        if (! $user->can('folders.share')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($folder)) {
+            return $this->aclService->canAccessFolder($user, $folder, 'share');
+        }
+
+        return true;
     }
 }

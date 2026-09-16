@@ -4,9 +4,14 @@ namespace App\Policies;
 
 use App\Models\Document;
 use App\Models\User;
+use App\Services\AccessControlService;
 
 class DocumentPolicy
 {
+    public function __construct(
+        protected AccessControlService $aclService
+    ) {}
+
     /**
      * Determine whether the user can view the document.
      */
@@ -16,7 +21,20 @@ class DocumentPolicy
             return false;
         }
 
-        return $user->can('documents.view');
+        // Access via active share or direct ACL
+        if ($this->aclService->canAccessDocument($user, $document, 'view')) {
+            return true;
+        }
+
+        if (! $user->can('documents.view')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($document)) {
+            return $this->aclService->canAccessDocument($user, $document, 'view');
+        }
+
+        return true;
     }
 
     public function create(User $user): bool
@@ -31,7 +49,15 @@ class DocumentPolicy
             return false;
         }
 
-        return $user->can('documents.update');
+        if (! $user->can('documents.update')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($document)) {
+            return $this->aclService->canAccessDocument($user, $document, 'update');
+        }
+
+        return true;
     }
 
     public function delete(User $user, Document $document): bool
@@ -40,7 +66,15 @@ class DocumentPolicy
             return false;
         }
 
-        return $user->can('documents.delete');
+        if (! $user->can('documents.delete')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($document)) {
+            return $this->aclService->canAccessDocument($user, $document, 'delete');
+        }
+
+        return true;
     }
 
     public function download(User $user, Document $document): bool
@@ -49,7 +83,20 @@ class DocumentPolicy
             return false;
         }
 
-        return $user->can('documents.download');
+        // Access via active share with download permission or direct ACL
+        if ($this->aclService->canAccessDocument($user, $document, 'download')) {
+            return true;
+        }
+
+        if (! $user->can('documents.download')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($document)) {
+            return $this->aclService->canAccessDocument($user, $document, 'download');
+        }
+
+        return true;
     }
 
     public function share(User $user, Document $document): bool
@@ -67,7 +114,15 @@ class DocumentPolicy
             return false;
         }
 
-        return $user->can('documents.archive');
+        if (! $user->can('documents.archive')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($document)) {
+            return $this->aclService->canAccessDocument($user, $document, 'archive');
+        }
+
+        return true;
     }
 
     public function restore(User $user, Document $document): bool
@@ -76,6 +131,31 @@ class DocumentPolicy
             return false;
         }
 
-        return $user->can('documents.restore');
+        if (! $user->can('documents.restore')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($document)) {
+            return $this->aclService->canAccessDocument($user, $document, 'restore');
+        }
+
+        return true;
+    }
+
+    public function forceDelete(User $user, Document $document): bool
+    {
+        if ($user->organization_id !== $document->organization_id) {
+            return false;
+        }
+
+        if (! $user->can('documents.delete')) {
+            return false;
+        }
+
+        if ($this->aclService->hasAcl($document)) {
+            return $this->aclService->canAccessDocument($user, $document, 'delete');
+        }
+
+        return true;
     }
 }
