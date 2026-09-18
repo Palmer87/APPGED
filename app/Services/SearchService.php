@@ -33,7 +33,7 @@ class SearchService
 
         // 2. Base query with eager loading to prevent N+1 issues
         $query = Document::query()
-            ->with(['categories', 'tags', 'metadataValues.definition', 'folder']);
+            ->with(['categories', 'tags', 'metadataValues.definition', 'folder', 'currentOcr']);
 
         // 3. Super-admin vs normal tenant isolation & ACL access control
         $this->aclService->applyAccessScope($query, $user);
@@ -115,14 +115,25 @@ class SearchService
                     ->orWhereRaw(
                         "to_tsvector('simple', coalesce(documents.name, '') || ' ' || coalesce(documents.file_name, '') || ' ' || coalesce(documents.description, '')) @@ plainto_tsquery('simple', ?)",
                         [$term]
-                    );
+                    )
+                    ->orWhereHas('ocrs', function (Builder $oq) use ($term, $wildcard) {
+                        $oq->where('status', 'completed')
+                            ->where(function (Builder $toq) use ($term, $wildcard) {
+                                $toq->whereRaw("to_tsvector('simple', coalesce(extracted_text, '')) @@ plainto_tsquery('simple', ?)", [$term])
+                                    ->orWhere('extracted_text', 'ilike', $wildcard);
+                            });
+                    });
             });
         } else {
             $wildcard = '%'.mb_strtolower($term).'%';
             $query->where(function (Builder $sub) use ($wildcard) {
                 $sub->whereRaw('LOWER(documents.name) LIKE ?', [$wildcard])
                     ->orWhereRaw('LOWER(documents.file_name) LIKE ?', [$wildcard])
-                    ->orWhereRaw('LOWER(documents.description) LIKE ?', [$wildcard]);
+                    ->orWhereRaw('LOWER(documents.description) LIKE ?', [$wildcard])
+                    ->orWhereHas('ocrs', function (Builder $oq) use ($wildcard) {
+                        $oq->where('status', 'completed')
+                            ->whereRaw('LOWER(extracted_text) LIKE ?', [$wildcard]);
+                    });
             });
         }
     }

@@ -25,7 +25,7 @@ class MetadataWebController extends Controller
 
         $definitions = MetadataDefinition::where('organization_id', $user->organization_id)
             ->withCount('values')
-            ->orderBy('order')
+            ->orderBy('name')
             ->get();
 
         return Inertia::render('Metadata/Index', [

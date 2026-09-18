@@ -8,6 +8,7 @@ use App\Http\Controllers\DocumentPreviewController;
 use App\Http\Controllers\DocumentShareController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Web\AuthWebController;
 use App\Http\Controllers\Web\CategoryWebController;
 use App\Http\Controllers\Web\DocumentWebController;
 use App\Http\Controllers\Web\FavoriteWebController;
@@ -15,9 +16,11 @@ use App\Http\Controllers\Web\FolderWebController;
 use App\Http\Controllers\Web\MetadataWebController;
 use App\Http\Controllers\Web\ProfileWebController;
 use App\Http\Controllers\Web\RecentWebController;
+use App\Http\Controllers\Web\RoleWebController;
 use App\Http\Controllers\Web\SearchWebController;
 use App\Http\Controllers\Web\ShareWebController;
 use App\Http\Controllers\Web\TagWebController;
+use App\Http\Controllers\Web\UserWebController;
 use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowInstanceController;
 use App\Http\Controllers\WorkflowStepController;
@@ -27,7 +30,9 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/login', fn () => response()->json(['message' => 'Unauthenticated'], 401))->name('login');
+Route::get('/login', [AuthWebController::class, 'create'])->name('login');
+Route::post('/login', [AuthWebController::class, 'store'])->name('login.store');
+Route::post('/logout', [AuthWebController::class, 'destroy'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
     // Dashboard V1
@@ -46,14 +51,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/documents', [DocumentWebController::class, 'index'])->name('documents.index');
     Route::post('/documents', [DocumentWebController::class, 'store'])->name('documents.store');
     Route::get('/documents/{document}', [DocumentWebController::class, 'show'])->name('documents.show');
+    Route::post('/documents/{document}/move', [DocumentWebController::class, 'move'])->name('documents.move');
     Route::get('/documents/{document}/download', [DocumentWebController::class, 'download'])->name('documents.download');
     Route::post('/documents/{document}/versions', [DocumentWebController::class, 'storeVersion'])->name('documents.versions.store');
     Route::get('/documents/{document}/versions/{version}/download', [DocumentWebController::class, 'downloadVersion'])->name('documents.versions.download');
     Route::post('/documents/{document}/versions/{version}/restore', [DocumentWebController::class, 'restoreVersion'])->name('documents.versions.restore');
+    Route::post('/documents/{document}/ocr/retry', [DocumentWebController::class, 'retryOcr'])->name('documents.ocr.retry');
 
     // Folders Web
     Route::get('/folders', [FolderWebController::class, 'index'])->name('folders.index');
     Route::post('/folders', [FolderWebController::class, 'store'])->name('folders.store');
+    Route::get('/folders/{folder}', [FolderWebController::class, 'show'])->name('folders.show');
     Route::put('/folders/{folder}', [FolderWebController::class, 'update'])->name('folders.update');
     Route::delete('/folders/{folder}', [FolderWebController::class, 'destroy'])->name('folders.destroy');
 
@@ -82,6 +90,23 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/metadata', [MetadataWebController::class, 'store'])->name('metadata.store');
     Route::put('/metadata/{metadata}', [MetadataWebController::class, 'update'])->name('metadata.update');
     Route::delete('/metadata/{metadata}', [MetadataWebController::class, 'destroy'])->name('metadata.destroy');
+
+    // Admin Web: Users & Roles
+    Route::get('/users', [UserWebController::class, 'index'])->name('users.index');
+    Route::get('/users/create', [UserWebController::class, 'create'])->name('users.create');
+    Route::post('/users', [UserWebController::class, 'store'])->name('users.store');
+    Route::get('/users/{user}', [UserWebController::class, 'show'])->name('users.show');
+    Route::get('/users/{user}/edit', [UserWebController::class, 'edit'])->name('users.edit');
+    Route::put('/users/{user}', [UserWebController::class, 'update'])->name('users.update');
+    Route::delete('/users/{user}', [UserWebController::class, 'destroy'])->name('users.destroy');
+    Route::post('/users/{user}/toggle-status', [UserWebController::class, 'toggleStatus'])->name('users.toggle-status');
+
+    Route::get('/roles', [RoleWebController::class, 'index'])->name('roles.index');
+    Route::get('/roles/create', [RoleWebController::class, 'create'])->name('roles.create');
+    Route::post('/roles', [RoleWebController::class, 'store'])->name('roles.store');
+    Route::get('/roles/{role}/edit', [RoleWebController::class, 'edit'])->name('roles.edit');
+    Route::put('/roles/{role}', [RoleWebController::class, 'update'])->name('roles.update');
+    Route::delete('/roles/{role}', [RoleWebController::class, 'destroy'])->name('roles.destroy');
 
     // Profile & Preferences
     Route::get('/profile', [ProfileWebController::class, 'index'])->name('profile.index');

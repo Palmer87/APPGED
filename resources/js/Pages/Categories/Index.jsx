@@ -16,8 +16,7 @@ export default function CategoriesIndex({ categories = [] }) {
 
     const form = useForm({
         name: '',
-        color: '#4f46e5',
-        icon: 'folder',
+        description: '',
     });
 
     const handleCreate = (e) => {
@@ -52,8 +51,7 @@ export default function CategoriesIndex({ categories = [] }) {
         setEditCategory(c);
         form.setData({
             name: c.name,
-            color: c.color || '#4f46e5',
-            icon: c.icon || 'folder',
+            description: c.description || '',
         });
     };
 
@@ -75,20 +73,19 @@ export default function CategoriesIndex({ categories = [] }) {
 
                 {categories.length > 0 ? (
                     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
-                        <Table headers={['Nom', 'Couleur', 'Documents associés', 'Actions']}>
+                        <Table headers={['Nom', 'Description', 'Documents associés', 'Actions']}>
                             {categories.map((cat) => (
                                 <tr key={cat.id} className="hover:bg-slate-50/70 transition">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2.5">
-                                            <span
-                                                className="w-3.5 h-3.5 rounded-full shrink-0"
-                                                style={{ backgroundColor: cat.color || '#4f46e5' }}
-                                            />
+                                            <span className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                                                <FolderTree className="w-4 h-4" />
+                                            </span>
                                             <span className="font-semibold text-sm text-slate-900">{cat.name}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 font-mono text-xs text-slate-500">
-                                        {cat.color || 'Par défaut'}
+                                    <td className="px-6 py-4 text-xs text-slate-500 max-w-xs truncate">
+                                        {cat.description || '—'}
                                     </td>
                                     <td className="px-6 py-4 text-xs font-semibold text-slate-600">
                                         {cat.documents_count || 0} document(s)
@@ -140,11 +137,12 @@ export default function CategoriesIndex({ categories = [] }) {
                         error={form.errors.name}
                     />
                     <Input
-                        id="cat-color"
-                        type="color"
-                        label="Couleur d'identification"
-                        value={form.data.color}
-                        onChange={(e) => form.setData('color', e.target.value)}
+                        id="cat-description"
+                        label="Description (optionnelle)"
+                        value={form.data.description}
+                        onChange={(e) => form.setData('description', e.target.value)}
+                        placeholder="Ex: Documents juridiques et contractuels..."
+                        error={form.errors.description}
                     />
                     <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                         <Button variant="secondary" onClick={() => setCreateModalOpen(false)}>Annuler</Button>
@@ -165,11 +163,11 @@ export default function CategoriesIndex({ categories = [] }) {
                         error={form.errors.name}
                     />
                     <Input
-                        id="edit-cat-color"
-                        type="color"
-                        label="Couleur d'identification"
-                        value={form.data.color}
-                        onChange={(e) => form.setData('color', e.target.value)}
+                        id="edit-cat-description"
+                        label="Description (optionnelle)"
+                        value={form.data.description}
+                        onChange={(e) => form.setData('description', e.target.value)}
+                        error={form.errors.description}
                     />
                     <div className="flex justify-end gap-2 pt-4 border-t border-slate-100">
                         <Button variant="secondary" onClick={() => setEditCategory(null)}>Annuler</Button>

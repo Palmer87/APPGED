@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Tableau de bord — GED SaaS</title>
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
-        @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @vite(['resources/css/app.css', 'resources/js/app.jsx'])
     @else
         <script src="https://cdn.tailwindcss.com"></script>
     @endif
@@ -15,40 +15,77 @@
         body { font-family: 'Instrument Sans', sans-serif; }
     </style>
 </head>
-<body class="h-full text-slate-800 dark:text-slate-100 antialiased">
-    <div class="min-h-full">
+<body class="h-full text-slate-800 dark:text-slate-100 antialiased bg-slate-50 dark:bg-slate-900">
+    <div class="min-h-full flex flex-col">
         <!-- Navigation Header -->
-        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-xs">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-2xs">
+            <div class="px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between h-16 items-center">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-200 dark:shadow-none">
-                            GED
-                        </div>
-                        <div>
-                            <span class="text-lg font-bold text-slate-900 dark:text-white">Espace Documentaire</span>
-                            <span class="hidden sm:inline-block ml-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-300">
-                                {{ $organization['name'] ?? 'Organisation' }}
-                            </span>
-                        </div>
+                    <div class="flex items-center space-x-3">
+                        <!-- Mobile burger button -->
+                        <button type="button" id="mobile-sidebar-toggle" class="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg lg:hidden" aria-label="Ouvrir le menu">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                        </button>
+                        <a href="/dashboard" class="flex items-center space-x-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-100">
+                                GED
+                            </div>
+                            <span class="text-base font-bold text-slate-900 dark:text-white">GED<span class="text-indigo-600">APP</span></span>
+                        </a>
+                        <span class="hidden md:inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600">
+                            {{ $organization['name'] ?? 'Organisation' }}
+                        </span>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <div class="relative">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
-                                🔔 {{ $statistics['notifications_unread_count'] ?? 0 }} non lue(s)
-                            </span>
-                        </div>
+                        <a href="/notifications" class="relative p-2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 rounded-full transition" title="Centre de notifications">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                            @if(($statistics['notifications_unread_count'] ?? 0) > 0)
+                                <span class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
+                                    {{ ($statistics['notifications_unread_count'] ?? 0) > 9 ? '9+' : ($statistics['notifications_unread_count'] ?? 0) }}
+                                </span>
+                            @endif
+                        </a>
                         <div class="text-right hidden sm:block">
-                            <p class="text-sm font-semibold text-slate-900 dark:text-white">{{ $user['full_name'] }}</p>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 capitalize">{{ $user['role'] }}</p>
+                            <p class="text-xs font-semibold text-slate-900 dark:text-white">{{ $user['full_name'] }}</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400 capitalize">{{ $user['role'] }}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Main Content -->
-        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        <!-- Main Body with Permanent Sidebar on Desktop -->
+        <div class="flex flex-1 min-h-0">
+            <!-- Mobile Drawer (hidden by default) -->
+            <div id="mobile-sidebar-drawer" class="hidden fixed inset-0 z-50 lg:hidden flex">
+                <div id="mobile-sidebar-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"></div>
+                <aside class="relative z-50 w-64 max-w-[80vw] bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col h-full">
+                    <div class="flex h-16 items-center justify-between px-6 border-b border-slate-100 dark:border-slate-700 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                                GED
+                            </div>
+                            <span class="font-bold text-slate-900 dark:text-white">GEDAPP</span>
+                        </div>
+                        <button type="button" id="mobile-sidebar-close" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+                        @include('partials.dashboard-nav')
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Permanent Desktop Sidebar -->
+            <aside class="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 min-h-[calc(100vh-4rem)]">
+                <div class="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+                    @include('partials.dashboard-nav')
+                </div>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8 space-y-8">
             <!-- Welcome Banner & Period Filter -->
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xs">
                 <div>
@@ -385,5 +422,22 @@
             </div>
         </main>
     </div>
+
+    <script>
+        const toggleBtn = document.getElementById('mobile-sidebar-toggle');
+        const drawer = document.getElementById('mobile-sidebar-drawer');
+        const closeBtn = document.getElementById('mobile-sidebar-close');
+        const backdrop = document.getElementById('mobile-sidebar-backdrop');
+
+        if (toggleBtn && drawer) {
+            toggleBtn.addEventListener('click', () => drawer.classList.remove('hidden'));
+        }
+        if (closeBtn && drawer) {
+            closeBtn.addEventListener('click', () => drawer.classList.add('hidden'));
+        }
+        if (backdrop && drawer) {
+            backdrop.addEventListener('click', () => drawer.classList.add('hidden'));
+        }
+    </script>
 </body>
 </html>

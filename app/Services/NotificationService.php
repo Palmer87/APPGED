@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\WorkflowApproverType;
 use App\Models\Document;
 use App\Models\DocumentComment;
+use App\Models\DocumentOcr;
 use App\Models\DocumentShare;
 use App\Models\DocumentVersion;
 use App\Models\Group;
@@ -13,6 +14,8 @@ use App\Models\WorkflowInstance;
 use App\Models\WorkflowStep;
 use App\Notifications\DocumentArchivedNotification;
 use App\Notifications\DocumentCommentedNotification;
+use App\Notifications\DocumentOcrCompletedNotification;
+use App\Notifications\DocumentOcrFailedNotification;
 use App\Notifications\DocumentRestoredNotification;
 use App\Notifications\DocumentSharedNotification;
 use App\Notifications\DocumentShareRevokedNotification;
@@ -379,5 +382,33 @@ class NotificationService
         );
 
         $this->notifyUsers(array_values($recipients), $notification, $document->organization_id);
+    }
+
+    /**
+     * Notify document owner when OCR processing completes successfully.
+     */
+    public function notifyDocumentOcrCompleted(Document $document, DocumentOcr $ocr): void
+    {
+        $owner = $document->uploader ?? $document->creator;
+        if (! $owner) {
+            return;
+        }
+
+        $notification = new DocumentOcrCompletedNotification($document, $ocr);
+        $this->notifyUser($owner, $notification, $document->organization_id);
+    }
+
+    /**
+     * Notify document owner when OCR processing fails.
+     */
+    public function notifyDocumentOcrFailed(Document $document, DocumentOcr $ocr): void
+    {
+        $owner = $document->uploader ?? $document->creator;
+        if (! $owner) {
+            return;
+        }
+
+        $notification = new DocumentOcrFailedNotification($document, $ocr);
+        $this->notifyUser($owner, $notification, $document->organization_id);
     }
 }

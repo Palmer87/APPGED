@@ -342,8 +342,9 @@ class NotificationTest extends TestCase
         $this->actingAs($this->adminA);
         $this->documentService->uploadNewVersion($doc, $file, 'Admin updated creator doc');
 
-        $this->assertCount(1, $this->userA1->notifications);
-        $this->assertEquals('document.version_created', $this->userA1->notifications->first()->data['type']);
+        $versionNotifs = $this->userA1->notifications->where('data.type', 'document.version_created');
+        $this->assertCount(1, $versionNotifs);
+        $this->assertEquals('document.version_created', $versionNotifs->first()->data['type']);
     }
 
     public function test_uploading_new_version_does_not_notify_users_with_revoked_shares(): void

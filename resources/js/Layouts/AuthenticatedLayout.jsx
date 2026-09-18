@@ -22,12 +22,15 @@ import {
     Search,
     ChevronDown,
     Building2,
-    Shield
+    Shield,
+    Users
 } from 'lucide-react';
 import Toast from '../Components/Toast';
 
 export default function AuthenticatedLayout({ children, title }) {
-    const { auth, flash, url } = usePage().props;
+    const page = usePage();
+    const { auth, flash } = page.props || {};
+    const pageUrl = page.url || page.props?.url || (typeof window !== 'undefined' ? window.location.pathname : '') || '';
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -48,54 +51,145 @@ export default function AuthenticatedLayout({ children, title }) {
         }
     };
 
+    const isUrl = (prefix) => {
+        if (!pageUrl || typeof pageUrl !== 'string') return false;
+        return pageUrl === prefix || pageUrl.startsWith(prefix);
+    };
+
+    const hasUrl = (segment) => {
+        if (!pageUrl || typeof pageUrl !== 'string') return false;
+        return pageUrl.includes(segment);
+    };
+
     const navItems = [
         {
             group: 'GÉNÉRAL',
             items: [
-                { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, current: url === '/dashboard' || url.startsWith('/dashboard?') },
+                { name: 'Tableau de bord', href: '/dashboard', icon: LayoutDashboard, current: isUrl('/dashboard') },
             ]
         },
         {
             group: 'DOCUMENTS',
             items: [
-                { name: 'Tous les documents', href: '/documents', icon: Files, current: url.startsWith('/documents') && !url.includes('/trash') && !url.includes('/archived') },
-                { name: 'Dossiers', href: '/folders', icon: Folder, current: url.startsWith('/folders') },
-                { name: 'Favoris', href: '/favorites', icon: Star, current: url.startsWith('/favorites') },
-                { name: 'Récents', href: '/recent', icon: Clock, current: url.startsWith('/recent') },
-                { name: 'Partagés avec moi', href: '/shares', icon: Share2, current: url.startsWith('/shares') },
-                { name: 'Archivés', href: '/documents/archived', icon: Archive, current: url.includes('/documents/archived') },
-                { name: 'Corbeille', href: '/documents/trash', icon: Trash2, current: url.includes('/documents/trash') },
+                { name: 'Tous les documents', href: '/documents', icon: Files, current: isUrl('/documents') && !hasUrl('/trash') && !hasUrl('/archived') },
+                { name: 'Dossiers', href: '/folders', icon: Folder, current: isUrl('/folders') },
+                { name: 'Favoris', href: '/favorites', icon: Star, current: isUrl('/favorites') },
+                { name: 'Récents', href: '/recent', icon: Clock, current: isUrl('/recent') },
+                { name: 'Partagés avec moi', href: '/shares', icon: Share2, current: isUrl('/shares') },
+                { name: 'Archivés', href: '/documents/archived', icon: Archive, current: hasUrl('/documents/archived') },
+                { name: 'Corbeille', href: '/documents/trash', icon: Trash2, current: hasUrl('/documents/trash') },
             ]
         },
         {
             group: 'COLLABORATION',
             items: [
-                { name: 'Workflows', href: '/workflows', icon: GitBranch, current: url.startsWith('/workflows') || url.startsWith('/workflow-instances') },
-                { name: 'Notifications', href: '/notifications', icon: Bell, current: url.startsWith('/notifications'), badge: unreadCount > 0 ? unreadCount : null },
-                { name: 'Journal d\'audit', href: '/audit-logs', icon: History, current: url.startsWith('/audit-logs') },
+                { name: 'Workflows', href: '/workflows', icon: GitBranch, current: isUrl('/workflows') || isUrl('/workflow-instances') },
+                { name: 'Notifications', href: '/notifications', icon: Bell, current: isUrl('/notifications'), badge: unreadCount > 0 ? unreadCount : null },
+                { name: 'Journal d\'audit', href: '/audit-logs', icon: History, current: isUrl('/audit-logs') },
             ]
         },
     ];
 
-    if (isAdmin || isManager) {
+    if (isAdmin || isManager || permissions.includes('users.view') || permissions.includes('roles.view')) {
+        const adminItems = [
+            { name: 'Catégories', href: '/categories', icon: FolderTree, current: isUrl('/categories') },
+            { name: 'Tags', href: '/tags', icon: TagsIcon, current: isUrl('/tags') },
+            { name: 'Métadonnées', href: '/metadata', icon: FileSpreadsheet, current: isUrl('/metadata') },
+        ];
+
+        if (isAdmin || permissions.includes('users.view')) {
+            adminItems.push({
+                name: 'Utilisateurs',
+                href: '/users',
+                icon: Users,
+                current: isUrl('/users'),
+            });
+        }
+
+        if (isAdmin || permissions.includes('roles.view')) {
+            adminItems.push({
+                name: 'Rôles & Permissions',
+                href: '/roles',
+                icon: Shield,
+                current: isUrl('/roles'),
+            });
+        }
+
         navItems.push({
             group: 'ADMINISTRATION',
-            items: [
-                { name: 'Catégories', href: '/categories', icon: FolderTree, current: url.startsWith('/categories') },
-                { name: 'Tags', href: '/tags', icon: TagsIcon, current: url.startsWith('/tags') },
-                { name: 'Métadonnées', href: '/metadata', icon: FileSpreadsheet, current: url.startsWith('/metadata') },
-            ]
+            items: adminItems,
         });
     }
 
+    const renderNavContent = () => (
+        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+            {navItems.map((group, idx) => (
+                <div key={idx}>
+                    <h3 className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        {group.group}
+                    </h3>
+                    <ul className="space-y-1">
+                        {group.items.map((item) => {
+                            const Icon = item.icon;
+                            return (
+                                <li key={item.name}>
+                                    <Link
+                                        href={item.href}
+                                        onClick={() => setSidebarOpen(false)}
+                                        className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition ${
+                                            item.current
+                                                ? 'bg-indigo-50 text-indigo-700 shadow-2xs font-bold'
+                                                : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Icon className={`w-4 h-4 shrink-0 ${item.current ? 'text-indigo-600' : 'text-slate-400'}`} />
+                                            <span>{item.name}</span>
+                                        </div>
+                                        {item.badge && (
+                                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                                                {item.badge}
+                                            </span>
+                                        )}
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            ))}
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-            {/* Mobile Sidebar Backdrop */}
+            {/* Mobile Drawer (shown only when burger menu clicked) */}
             {sidebarOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden"
-                    onClick={() => setSidebarOpen(false)}
-                />
+                <div className="fixed inset-0 z-50 lg:hidden flex">
+                    <div
+                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                    <aside className="relative z-50 w-64 max-w-[80vw] bg-white border-r border-slate-200 shadow-2xl flex flex-col h-full">
+                        <div className="flex h-16 items-center justify-between px-6 border-b border-slate-100 shrink-0">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
+                                    GED
+                                </div>
+                                <span className="font-bold text-slate-900">GEDAPP</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setSidebarOpen(false)}
+                                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                aria-label="Fermer le menu"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        {renderNavContent()}
+                    </aside>
+                </div>
             )}
 
             {/* Top Navigation Header */}
@@ -220,66 +314,10 @@ export default function AuthenticatedLayout({ children, title }) {
                 </div>
             </header>
 
-            <div className="flex flex-1">
-                {/* Desktop & Mobile Sidebar */}
-                <aside
-                    className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-white border-r border-slate-200 transition-transform duration-200 ease-in-out lg:static lg:translate-x-0 ${
-                        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-                    }`}
-                >
-                    <div className="flex h-16 items-center justify-between px-6 border-b border-slate-100 lg:hidden">
-                        <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold text-sm">
-                                GED
-                            </div>
-                            <span className="font-bold text-slate-900">GEDAPP</span>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setSidebarOpen(false)}
-                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    <div className="h-[calc(100vh-4rem)] overflow-y-auto px-4 py-6 space-y-6">
-                        {navItems.map((group, idx) => (
-                            <div key={idx}>
-                                <h3 className="px-3 text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                                    {group.group}
-                                </h3>
-                                <ul className="space-y-1">
-                                    {group.items.map((item) => {
-                                        const Icon = item.icon;
-                                        return (
-                                            <li key={item.name}>
-                                                <Link
-                                                    href={item.href}
-                                                    onClick={() => setSidebarOpen(false)}
-                                                    className={`flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                                                        item.current
-                                                            ? 'bg-indigo-50 text-indigo-700 shadow-2xs'
-                                                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                                                    }`}
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <Icon className={`w-4 h-4 ${item.current ? 'text-indigo-600' : 'text-slate-400'}`} />
-                                                        <span>{item.name}</span>
-                                                    </div>
-                                                    {item.badge && (
-                                                        <span className="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
-                                                            {item.badge}
-                                                        </span>
-                                                    )}
-                                                </Link>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
+            <div className="flex flex-1 min-h-0">
+                {/* Permanent Desktop Sidebar */}
+                <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:shrink-0 bg-white border-r border-slate-200 min-h-[calc(100vh-4rem)]">
+                    {renderNavContent()}
                 </aside>
 
                 {/* Main page content */}

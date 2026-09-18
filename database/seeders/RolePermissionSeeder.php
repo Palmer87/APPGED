@@ -19,6 +19,7 @@ class RolePermissionSeeder extends Seeder
             'documents.view', 'documents.create', 'documents.update', 'documents.delete', 'documents.download', 'documents.share', 'documents.archive', 'documents.restore',
             'folders.view', 'folders.create', 'folders.update', 'folders.delete', 'folders.share',
             'users.view', 'users.create', 'users.update', 'users.delete',
+            'roles.view', 'roles.create', 'roles.update', 'roles.delete',
             'groups.view', 'groups.create', 'groups.update', 'groups.delete',
             'categories.view', 'categories.create', 'categories.update', 'categories.delete',
             'tags.view', 'tags.create', 'tags.update', 'tags.delete',

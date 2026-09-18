@@ -8,6 +8,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowInstance;
 use App\Services\WorkflowService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -75,7 +76,7 @@ class WorkflowInstanceController extends Controller
     /**
      * Approve the current step of an instance.
      */
-    public function approve(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse
+    public function approve(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
         $action = $this->workflowService->approve($request->user(), $instance, $request->validated('comment'));
 
@@ -92,7 +93,7 @@ class WorkflowInstanceController extends Controller
     /**
      * Reject a workflow instance.
      */
-    public function reject(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
+    public function reject(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
         $action = $this->workflowService->reject($request->user(), $instance, $request->validated('comment'));
 
@@ -109,7 +110,7 @@ class WorkflowInstanceController extends Controller
     /**
      * Request correction on a workflow instance.
      */
-    public function requestCorrection(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
+    public function requestCorrection(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
         $action = $this->workflowService->requestCorrection($request->user(), $instance, $request->validated('comment'));
 
@@ -126,7 +127,7 @@ class WorkflowInstanceController extends Controller
     /**
      * Resubmit a workflow instance after corrections.
      */
-    public function resubmit(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
+    public function resubmit(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
         $action = $this->workflowService->resubmit($request->user(), $instance, $request->validated('comment'));
 
@@ -143,7 +144,7 @@ class WorkflowInstanceController extends Controller
     /**
      * Cancel an active workflow instance.
      */
-    public function cancel(WorkflowActionRequest $request, WorkflowInstance $instance): mixed
+    public function cancel(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
         $action = $this->workflowService->cancel($request->user(), $instance, $request->validated('comment'));
 

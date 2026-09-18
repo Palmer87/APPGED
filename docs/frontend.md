@@ -185,6 +185,37 @@ Le layout principal encapsule l'application dans une interface professionnelle :
 - Consultation et mise à jour des informations personnelles.
 - Configuration granulaire des canaux de notification (in-app, e-mail).
 
+### 13. Authentification & Connexion (`Auth/Login.jsx`)
+- **Emplacement :** `resources/js/Pages/Auth/Login.jsx`.
+- **Routes :**
+  - `GET /login` : Affichage de la page de connexion (contrôleur `AuthWebController@create`).
+  - `POST /login` : Traitement de la connexion (`AuthWebController@store`).
+  - `POST /logout` : Déconnexion de la session (`AuthWebController@destroy`).
+- **Structure Desktop :**
+  - Composition en deux zones (split 45/55) :
+    - *Zone Gauche (SaaS Branding) :* Présentation sobre de l'identité GEDAPP, promesse de valeur, 3 piliers (Centralisation, Collaboration, Sécurité) et badges de conformité (Chiffrement AES-256, RGPD).
+    - *Zone Droite (Formulaire) :* Carte d'authentification avec champs Email et Mot de passe, bascule Afficher/Masquer le mot de passe, option "Se souvenir de moi", lien d'assistance mot de passe oublié et bouton de soumission avec état de chargement.
+- **Comportement Responsive :**
+  - Sur mobile et tablette (`< 1024px`), la grande zone marketing gauche est masquée au profit d'un en-tête sobre centré avec le logo GEDAPP. Le formulaire s'adapte en pleine largeur avec des marges et des cibles tactiles ergonomiques.
+- **Composants Utilisés :** Formulaire réactif `@inertiajs/react` (`useForm`), icônes `lucide-react` (`Mail`, `Lock`, `Eye`, `EyeOff`, `ShieldCheck`, `CheckCircle2`, `FolderSync`, `Users2`, `AlertCircle`, `X`), modale d'assistance mot de passe oublié.
+- **Gestion des Erreurs :** Erreurs inline sous les champs (`errors.email`, `errors.password`), bannières d'alerte contextuelles pour les messages de session flash (`flash.success`, `flash.error`).
+- **Sécurité :** Protection contre la fixation de session (`$request->session()->regenerate()`), vérification des comptes inactifs, journalisation systématique dans `AuditService` (`auth.login`, `auth.logout`), et protection CSRF automatique via Inertia.
+
+### 14. Gestion des Utilisateurs (`Users/Index.jsx`, `Create.jsx`, `Edit.jsx`, `Show.jsx`)
+- **Emplacement :** `resources/js/Pages/Users/`
+- **Fonctionnalités :**
+  - **Index :** Recherche par nom/prénom/email/fonction, filtrage par statut (actif/inactif), rôle et groupe. Affichage responsive avec initiales stylisées, badges de rôles, groupes et date de dernière connexion. Actions : consultation, modification, bascule rapide du statut d'accès (activer/désactiver) et suppression avec modales de confirmation.
+  - **Create / Edit :** Saisie des coordonnées (prénom, nom, email, téléphone, fonction), gestion sécurisée du mot de passe (optionnel en modification), assignation du rôle principal et multi-sélection des groupes d'appartenance.
+  - **Show :** Profil détaillé de l'utilisateur, carte des rôles et groupes associés, et historique complet du journal d'activité d'audit.
+- **Sécurité :** Contrôle d'accès via `UserPolicy`, étanchéité multi-tenant par `organization_id`, protection empêchant l'auto-désactivation et l'auto-suppression du compte connecté.
+
+### 15. Gestion des Rôles & Permissions (`Roles/Index.jsx`, `Create.jsx`, `Edit.jsx`)
+- **Emplacement :** `resources/js/Pages/Roles/`
+- **Fonctionnalités :**
+  - **Index :** Liste des rôles de l'organisation avec badge distinctif (Rôle système vs Rôle personnalisé), comptabilisation dynamique du nombre d'utilisateurs rattachés et de permissions accordées.
+  - **Create / Edit :** Matrice visuelle ergonomique des permissions organisée en 11 domaines fonctionnels (Documents, Dossiers, Utilisateurs, Groupes, Catégories, Tags, Métadonnées, Workflows, Commentaires, Audit, Paramètres) avec bascule globale "Tout sélectionner" et bascules rapides par domaine ("Cocher tout / Décocher tout").
+- **Sécurité :** Contrôle d'accès via `RolePolicy`, protection stricte des rôles système (`super-admin`, `admin` non renommables et non supprimables), interdiction de supprimer un rôle encore attribué à des utilisateurs actifs, et isolation multi-tenant Spatie par `organization_id`.
+
 ---
 
 ## 7. Sécurité & Contrôle d'Accès

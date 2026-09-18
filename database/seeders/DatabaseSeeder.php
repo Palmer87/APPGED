@@ -7,6 +7,7 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\PermissionRegistrar;
 
 class DatabaseSeeder extends Seeder
 {
@@ -43,5 +44,8 @@ class DatabaseSeeder extends Seeder
             ->firstOrFail();
 
         $user->groups()->syncWithoutDetaching([$group->id]);
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($organization->id);
+        $user->syncRoles(['admin', 'super-admin']);
     }
 }

@@ -17,6 +17,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Documents Storage Disk
+    |--------------------------------------------------------------------------
+    |
+    | Specify the disk where private tenant documents are stored.
+    | Defaults to DOCUMENTS_DISK, then FILESYSTEM_DISK, then 'private'.
+    | Supported: 'private', 'local', 's3', 'r2'
+    |
+    */
+
+    'documents_disk' => env('DOCUMENTS_DISK', env('FILESYSTEM_DISK', 'private')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Filesystem Disks
     |--------------------------------------------------------------------------
     |
@@ -38,6 +51,13 @@ return [
             'report' => false,
         ],
 
+        'private' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
@@ -51,11 +71,26 @@ return [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
-            'region' => env('AWS_DEFAULT_REGION'),
-            'bucket' => env('AWS_BUCKET'),
+            'region' => env('AWS_DEFAULT_REGION', 'auto'),
+            'bucket' => env('AWS_BUCKET', 'djudevstorage'),
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
+            'visibility' => 'private',
+            'throw' => false,
+            'report' => false,
+        ],
+
+        'r2' => [
+            'driver' => 's3',
+            'key' => env('R2_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
+            'secret' => env('R2_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
+            'region' => env('R2_DEFAULT_REGION', env('AWS_DEFAULT_REGION', 'auto')),
+            'bucket' => env('R2_BUCKET', env('AWS_BUCKET', 'djudevstorage')),
+            'url' => env('R2_URL', env('AWS_URL')),
+            'endpoint' => env('R2_ENDPOINT', env('AWS_ENDPOINT')),
+            'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', env('AWS_USE_PATH_STYLE_ENDPOINT', false)),
+            'visibility' => 'private',
             'throw' => false,
             'report' => false,
         ],

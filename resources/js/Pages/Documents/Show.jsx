@@ -29,7 +29,9 @@ import {
     RotateCcw,
     AlertCircle,
     User as UserIcon,
-    Send
+    Send,
+    Copy,
+    Check
 } from 'lucide-react';
 
 export default function DocumentShow({
@@ -47,6 +49,8 @@ export default function DocumentShow({
     const [workflowActionModalOpen, setWorkflowActionModalOpen] = useState(false);
     const [workflowActionType, setWorkflowActionType] = useState('approve'); // approve | reject | correction
     const [replyToCommentId, setReplyToCommentId] = useState(null);
+    const [copiedText, setCopiedText] = useState(false);
+    const [isRetryingOcr, setIsRetryingOcr] = useState(false);
 
     // New Version Form
     const versionForm = useForm({
@@ -132,9 +136,29 @@ export default function DocumentShow({
         });
     };
 
+    const handleRetryOcr = () => {
+        setIsRetryingOcr(true);
+        router.post(`/documents/${doc.id}/ocr/retry`, {}, {
+            preserveScroll: true,
+            onFinish: () => setIsRetryingOcr(false),
+        });
+    };
+
+    const handleCopyOcrText = (text) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        setCopiedText(true);
+        setTimeout(() => setCopiedText(false), 2000);
+    };
+
+    const ocrStatus = typeof doc.current_ocr?.status === 'object'
+        ? doc.current_ocr?.status?.value
+        : (doc.current_ocr?.status || 'none');
+
     const tabs = [
         { id: 'preview', label: 'Aperçu', icon: <Eye className="w-4 h-4" /> },
         { id: 'versions', label: 'Versions', icon: <Clock className="w-4 h-4" />, badge: doc.versions?.length || 1 },
+        { id: 'ocr', label: 'Texte OCR', icon: <FileText className="w-4 h-4" />, badge: ocrStatus === 'completed' ? '✓' : undefined },
         { id: 'metadata', label: 'Métadonnées', icon: <FileText className="w-4 h-4" /> },
         { id: 'comments', label: 'Discussions', icon: <MessageSquare className="w-4 h-4" />, badge: doc.comments?.length || 0 },
         { id: 'shares', label: 'Partages', icon: <Share2 className="w-4 h-4" />, badge: doc.shares?.length || 0 },
@@ -171,6 +195,37 @@ export default function DocumentShow({
                                     <Badge variant={doc.status === 'active' ? 'success' : 'warning'}>
                                         {doc.status}
                                     </Badge>
+
+                                    {/* OCR Status Pill */}
+                                    {ocrStatus === 'completed' && (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                            OCR : Indexé ({doc.current_ocr?.word_count || 0} mots)
+                                        </span>
+                                    )}
+                                    {ocrStatus === 'processing' && (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 animate-pulse">
+                                            <RotateCcw className="w-3.5 h-3.5 text-blue-600 animate-spin" />
+                                            OCR : Traitement en cours...
+                                        </span>
+                                    )}
+                                    {ocrStatus === 'pending' && (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                                            OCR : En attente
+                                        </span>
+                                    )}
+                                    {ocrStatus === 'failed' && (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700 border border-rose-200">
+                                            <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                                            OCR : Échec
+                                        </span>
+                                    )}
+                                    {ocrStatus === 'skipped' && (
+                                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                                            OCR : Non applicable
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="mt-1.5 flex items-center gap-3 text-xs text-slate-500 flex-wrap">
                                     <span className="font-mono">{formatBytes(doc.size)}</span>
@@ -215,6 +270,19 @@ export default function DocumentShow({
                                 >
                                     <Upload className="w-4 h-4" />
                                     Nouvelle version
+                                </Button>
+                            )}
+
+                            {permissions.can_edit && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={isRetryingOcr || ocrStatus === 'processing'}
+                                    onClick={handleRetryOcr}
+                                    title="Lancer ou relancer la reconnaissance OCR"
+                                >
+                                    <RotateCcw className={`w-4 h-4 ${isRetryingOcr ? 'animate-spin' : ''}`} />
+                                    Relancer OCR
                                 </Button>
                             )}
 
@@ -565,7 +633,113 @@ export default function DocumentShow({
                             </div>
                         )}
 
-                        {/* 7. History Tab */}
+                        {/* 7. OCR Tab */}
+                        {activeTab === 'ocr' && (
+                            <div className="space-y-6">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-slate-900">Reconnaissance optique de caractères (OCR)</h3>
+                                        <p className="text-xs text-slate-500 mt-0.5">
+                                            Texte extrait et indexé dans PostgreSQL pour la recherche documentaire.
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {permissions.can_edit && (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                disabled={isRetryingOcr || ocrStatus === 'processing'}
+                                                onClick={handleRetryOcr}
+                                            >
+                                                <RotateCcw className={`w-3.5 h-3.5 ${isRetryingOcr ? 'animate-spin' : ''}`} />
+                                                Relancer OCR
+                                            </Button>
+                                        )}
+                                        {doc.current_ocr?.extracted_text && (
+                                            <Button
+                                                variant="secondary"
+                                                size="sm"
+                                                onClick={() => handleCopyOcrText(doc.current_ocr.extracted_text)}
+                                            >
+                                                {copiedText ? (
+                                                    <>
+                                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                                        Copié !
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Copy className="w-3.5 h-3.5" />
+                                                        Copier le texte
+                                                    </>
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* OCR Metadata stats */}
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Statut</span>
+                                        <span className="text-xs font-bold text-slate-800 capitalize mt-0.5 block">
+                                            {ocrStatus === 'completed' ? '✓ Complété' : ocrStatus === 'processing' ? '⏳ En cours' : ocrStatus === 'failed' ? '⚠ Échec' : ocrStatus === 'skipped' ? '— Non applicable' : 'En attente'}
+                                        </span>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Mots indexés</span>
+                                        <span className="text-xs font-bold text-slate-800 mt-0.5 block">
+                                            {doc.current_ocr?.word_count ?? 0}
+                                        </span>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Langues</span>
+                                        <span className="text-xs font-bold text-slate-800 mt-0.5 block uppercase">
+                                            {doc.current_ocr?.language || 'fra+eng'}
+                                        </span>
+                                    </div>
+                                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80">
+                                        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Dernier traitement</span>
+                                        <span className="text-xs font-bold text-slate-800 mt-0.5 block">
+                                            {doc.current_ocr?.processed_at ? new Date(doc.current_ocr.processed_at).toLocaleString('fr-FR') : '—'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Error message banner if failed */}
+                                {ocrStatus === 'failed' && (
+                                    <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
+                                        <div className="font-semibold flex items-center gap-1.5">
+                                            <AlertCircle className="w-4 h-4 text-rose-600" />
+                                            Erreur lors du traitement OCR
+                                        </div>
+                                        <p className="text-rose-700">{doc.current_ocr?.error_message || 'Une erreur inconnue est survenue.'}</p>
+                                    </div>
+                                )}
+
+                                {/* Skipped message banner */}
+                                {ocrStatus === 'skipped' && (
+                                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+                                        {doc.current_ocr?.error_message || 'Ce type de document n\'a pas nécessité de traitement OCR.'}
+                                    </div>
+                                )}
+
+                                {/* Extracted Text View */}
+                                {doc.current_ocr?.extracted_text ? (
+                                    <div className="space-y-2">
+                                        <span className="text-xs font-semibold text-slate-700">Contenu textuel extrait :</span>
+                                        <div className="p-4 rounded-xl bg-slate-900 text-slate-100 font-mono text-xs leading-relaxed max-h-[500px] overflow-y-auto whitespace-pre-wrap select-all">
+                                            {doc.current_ocr.extracted_text}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    ocrStatus === 'completed' && (
+                                        <p className="text-xs text-slate-500 italic">Aucun texte n'a été détecté dans ce document.</p>
+                                    )
+                                )}
+                            </div>
+                        )}
+
+                        {/* 8. History Tab */}
                         {activeTab === 'history' && (
                             <div className="space-y-4">
                                 <h3 className="text-sm font-semibold text-slate-900">Journal d'audit du document</h3>

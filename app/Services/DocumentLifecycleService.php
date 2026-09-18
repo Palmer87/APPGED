@@ -147,26 +147,38 @@ class DocumentLifecycleService
 
         Gate::forUser($actor)->authorize('forceDelete', $document);
 
-        // Collect all physical storage paths (main document file + all version files)
-        $filesToDelete = [];
-
-        if (! empty($document->storage_path)) {
-            $filesToDelete[] = $document->storage_path;
-        }
+        // Collect and physically purge storage files using each record's configured disk
+        $purgedFiles = [];
 
         $document->loadMissing('versions');
         foreach ($document->versions as $version) {
-            if (! empty($version->storage_path) && ! in_array($version->storage_path, $filesToDelete, true)) {
-                $filesToDelete[] = $version->storage_path;
+            if (! empty($version->storage_path)) {
+                $versionDisk = $version->storage_disk ?: config('filesystems.documents_disk', config('filesystems.default', 'local'));
+                if (Storage::disk($versionDisk)->exists($version->storage_path)) {
+                    Storage::disk($versionDisk)->delete($version->storage_path);
+                }
+                $purgedFiles[] = "{$versionDisk}://{$version->storage_path}";
             }
         }
 
-        // Physically delete from private storage disk
-        $disk = config('filesystems.default', 'local');
-        foreach ($filesToDelete as $filePath) {
-            if (Storage::disk($disk)->exists($filePath)) {
-                Storage::disk($disk)->delete($filePath);
+        if (! empty($document->storage_path)) {
+            $docDisk = $document->storage_disk ?: config('filesystems.documents_disk', config('filesystems.default', 'local'));
+            if (Storage::disk($docDisk)->exists($document->storage_path)) {
+                Storage::disk($docDisk)->delete($document->storage_path);
             }
+            $docEntry = "{$docDisk}://{$document->storage_path}";
+            if (! in_array($docEntry, $purgedFiles, true)) {
+                $purgedFiles[] = $docEntry;
+            }
+        }
+
+        // Clean up document directory if applicable
+        $docDisk = $document->storage_disk ?: config('filesystems.documents_disk', config('filesystems.default', 'local'));
+        $docDir = "organizations/{$document->organization_id}/documents/{$document->id}";
+        try {
+            Storage::disk($docDisk)->deleteDirectory($docDir);
+        } catch (\Throwable) {
+            // Non-blocking if directory cleanup is not supported by driver
         }
 
         // Log audit BEFORE deleting DB record to preserve IDs and organization info
@@ -174,8 +186,8 @@ class DocumentLifecycleService
             action: 'document.force_deleted',
             auditable: $document,
             metadata: [
-                'purged_files_count' => count($filesToDelete),
-                'purged_files' => $filesToDelete,
+                'purged_files_count' => count($purgedFiles),
+                'purged_files' => $purgedFiles,
             ],
             user: $actor,
             description: "Document '{$document->name}' permanently deleted and files purged."

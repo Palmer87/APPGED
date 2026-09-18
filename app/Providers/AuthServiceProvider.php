@@ -20,12 +20,14 @@ use App\Policies\DocumentPolicy;
 use App\Policies\GroupPolicy;
 use App\Policies\MetadataDefinitionPolicy;
 use App\Policies\OrganizationPolicy;
+use App\Policies\RolePolicy;
 use App\Policies\TagPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\WorkflowInstancePolicy;
 use App\Policies\WorkflowPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 class AuthServiceProvider extends ServiceProvider
@@ -59,6 +61,8 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(Workflow::class, WorkflowPolicy::class);
         Gate::policy(WorkflowInstance::class, WorkflowInstancePolicy::class);
         Gate::policy(DocumentComment::class, DocumentCommentPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(Role::class, RolePolicy::class);
 
         // Super-admin has global access across all organisations
         Gate::before(function (User $user, $ability) {

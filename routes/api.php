@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
 use App\Http\Controllers\Api\V1\DocumentCommentController;
 use App\Http\Controllers\Api\V1\DocumentController;
+use App\Http\Controllers\Api\V1\DocumentOcrController;
 use App\Http\Controllers\Api\V1\DocumentShareController;
 use App\Http\Controllers\Api\V1\DocumentVersionController;
 use App\Http\Controllers\Api\V1\FavoriteController;
@@ -73,6 +74,10 @@ Route::prefix('v1')->group(function () {
 
             // Document Favorite toggle shorthand
             Route::post('/{document}/favorite', [FavoriteController::class, 'toggle'])->name('api.v1.documents.favorite.toggle');
+
+            // Document OCR
+            Route::get('/{document}/ocr', [DocumentOcrController::class, 'show'])->name('api.v1.documents.ocr.show');
+            Route::post('/{document}/ocr/retry', [DocumentOcrController::class, 'retry'])->name('api.v1.documents.ocr.retry');
         });
         Route::apiResource('documents', DocumentController::class)->names('api.v1.documents');
 

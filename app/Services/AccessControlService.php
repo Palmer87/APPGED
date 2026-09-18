@@ -503,13 +503,21 @@ class AccessControlService
         // 1. Strict tenant isolation
         $query->where('documents.organization_id', $user->organization_id);
 
+        // Admins have organization-wide document access
+        if ($user->hasRole('admin')) {
+            return $query;
+        }
+
         // 2. Fetch user's group IDs
         $userGroupIds = $user->groups()->pluck('groups.id');
 
         // 3. Document must be accessible with 'view' permission
         return $query->where(function (Builder $sub) use ($user, $userGroupIds) {
+            // Uploaded by user
+            $sub->where('documents.uploaded_by', $user->id);
+
             // Direct user ACL on document
-            $sub->whereExists(function ($permQuery) use ($user) {
+            $sub->orWhereExists(function ($permQuery) use ($user) {
                 $permQuery->select(DB::raw(1))
                     ->from('document_permissions')
                     ->whereColumn('document_permissions.document_id', 'documents.id')

@@ -39,10 +39,11 @@ class TagWebController extends Controller
         Gate::authorize('create', Tag::class);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $this->tagService->create($validated, $request->user());
+        $this->tagService->create($validated);
 
         return back()->with('success', 'Tag créé avec succès.');
     }
@@ -52,10 +53,11 @@ class TagWebController extends Controller
         Gate::authorize('update', $tag);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $this->tagService->update($tag, $validated, $request->user());
+        $this->tagService->update($tag, $validated);
 
         return back()->with('success', 'Tag mis à jour avec succès.');
     }
@@ -64,7 +66,7 @@ class TagWebController extends Controller
     {
         Gate::authorize('delete', $tag);
 
-        $this->tagService->delete($tag, $request->user());
+        $this->tagService->delete($tag);
 
         return back()->with('success', 'Tag supprimé avec succès.');
     }

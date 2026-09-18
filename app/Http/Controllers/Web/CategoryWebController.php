@@ -39,12 +39,11 @@ class CategoryWebController extends Controller
         Gate::authorize('create', Category::class);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'color' => ['nullable', 'string', 'max:50'],
-            'icon' => ['nullable', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $this->categoryService->create($validated, $request->user());
+        $this->categoryService->create($validated);
 
         return back()->with('success', 'Catégorie créée avec succès.');
     }
@@ -54,12 +53,11 @@ class CategoryWebController extends Controller
         Gate::authorize('update', $category);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'color' => ['nullable', 'string', 'max:50'],
-            'icon' => ['nullable', 'string', 'max:50'],
+            'name' => ['required', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $this->categoryService->update($category, $validated, $request->user());
+        $this->categoryService->update($category, $validated);
 
         return back()->with('success', 'Catégorie mise à jour avec succès.');
     }
@@ -68,7 +66,7 @@ class CategoryWebController extends Controller
     {
         Gate::authorize('delete', $category);
 
-        $this->categoryService->delete($category, $request->user());
+        $this->categoryService->delete($category);
 
         return back()->with('success', 'Catégorie supprimée avec succès.');
     }

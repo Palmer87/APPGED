@@ -150,4 +150,14 @@ class Document extends Model
     {
         return $this->hasMany(DocumentFavorite::class);
     }
+
+    public function ocrs(): HasMany
+    {
+        return $this->hasMany(DocumentOcr::class);
+    }
+
+    public function currentOcr(): HasOne
+    {
+        return $this->hasOne(DocumentOcr::class)->latestOfMany();
+    }
 }

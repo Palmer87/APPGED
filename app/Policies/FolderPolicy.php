@@ -12,6 +12,11 @@ class FolderPolicy
         protected AccessControlService $aclService
     ) {}
 
+    public function viewAny(User $user): bool
+    {
+        return $user->can('folders.view') || $user->hasRole('admin') || $user->hasRole('super-admin');
+    }
+
     public function view(User $user, Folder $folder): bool
     {
         if ($user->organization_id !== $folder->organization_id) {

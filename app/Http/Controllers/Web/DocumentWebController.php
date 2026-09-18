@@ -16,11 +16,11 @@ use App\Services\AccessControlService;
 use App\Services\AuditService;
 use App\Services\DocumentMetadataService;
 use App\Services\DocumentService;
+use App\Services\OcrService;
 use App\Services\PreviewService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -98,7 +98,7 @@ class DocumentWebController extends Controller
 
         $categories = Category::where('organization_id', $user->organization_id)
             ->orderBy('name')
-            ->get(['id', 'name', 'color']);
+            ->get(['id', 'name']);
 
         $tags = Tag::where('organization_id', $user->organization_id)
             ->orderBy('name')
@@ -130,7 +130,10 @@ class DocumentWebController extends Controller
             'categories',
             'tags',
             'creator',
+            'versions.uploader',
             'versions.creator',
+            'versions.ocr',
+            'currentOcr',
             'metadataValues.definition',
             'shares.user',
             'shares.group',
@@ -159,7 +162,7 @@ class DocumentWebController extends Controller
         // Metadata definitions available for organization
         $metadataDefinitions = MetadataDefinition::where('organization_id', $user->organization_id)
             ->where('is_active', true)
-            ->orderBy('order')
+            ->orderBy('name')
             ->get();
 
         // User capabilities on this document
@@ -259,24 +262,7 @@ class DocumentWebController extends Controller
      */
     public function download(Request $request, Document $document): StreamedResponse
     {
-        Gate::authorize('view', $document);
-
-        $version = $document->currentVersion;
-        if (! $version || ! Storage::disk($version->storage_disk)->exists($version->file_path)) {
-            abort(404, 'File not found on storage disk');
-        }
-
-        $this->auditService->success(
-            action: 'document.downloaded',
-            auditable: $document,
-            user: $request->user(),
-            description: "Document '{$document->name}' (V{$version->version_number}) downloaded."
-        );
-
-        return Storage::disk($version->storage_disk)->download(
-            $version->file_path,
-            $document->name
-        );
+        return $this->documentService->download($document);
     }
 
     /**
@@ -284,29 +270,7 @@ class DocumentWebController extends Controller
      */
     public function downloadVersion(Request $request, Document $document, DocumentVersion $version): StreamedResponse
     {
-        Gate::authorize('view', $document);
-
-        if ($version->document_id !== $document->id) {
-            abort(404, 'Version does not belong to this document');
-        }
-
-        if (! Storage::disk($version->storage_disk)->exists($version->file_path)) {
-            abort(404, 'Version file not found on storage disk');
-        }
-
-        $this->auditService->success(
-            action: 'document.version_downloaded',
-            auditable: $document,
-            user: $request->user(),
-            description: "Document '{$document->name}' (V{$version->version_number}) downloaded."
-        );
-
-        $filename = pathinfo($document->name, PATHINFO_FILENAME)."_v{$version->version_number}.{$version->extension}";
-
-        return Storage::disk($version->storage_disk)->download(
-            $version->file_path,
-            $filename
-        );
+        return $this->documentService->downloadVersion($document, $version);
     }
 
     /**
@@ -345,5 +309,47 @@ class DocumentWebController extends Controller
         $this->documentService->restoreVersion($document, $version, $request->user());
 
         return back()->with('success', "Version {$version->version_number} restaurée avec succès.");
+    }
+
+    /**
+     * Retry OCR processing for a document.
+     */
+    public function retryOcr(Request $request, Document $document): RedirectResponse
+    {
+        Gate::authorize('update', $document);
+
+        $version = null;
+        if ($request->filled('version_id')) {
+            $version = DocumentVersion::where('document_id', $document->id)
+                ->findOrFail($request->input('version_id'));
+        }
+
+        app(OcrService::class)->dispatchOcr($document, $version, $request->user());
+
+        return back()->with('success', 'Traitement OCR planifié avec succès.');
+    }
+
+    /**
+     * Move a document to a different folder (or root).
+     */
+    public function move(Request $request, Document $document): RedirectResponse
+    {
+        Gate::authorize('update', $document);
+
+        $validated = $request->validate([
+            'folder_id' => ['nullable', 'integer', 'exists:folders,id'],
+        ]);
+
+        $targetFolder = null;
+        if (! empty($validated['folder_id'])) {
+            $targetFolder = Folder::where('organization_id', $request->user()->organization_id)
+                ->findOrFail($validated['folder_id']);
+        }
+
+        $this->documentService->move($document, $targetFolder);
+
+        $folderName = $targetFolder ? "'{$targetFolder->name}'" : 'la racine';
+
+        return back()->with('success', "Document '{$document->name}' déplacé vers {$folderName}.");
     }
 }

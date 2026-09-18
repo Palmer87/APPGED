@@ -92,7 +92,7 @@ class DocumentCommentService
 
             $this->notificationService->notifyDocumentCommented($comment, $actor);
 
-            return $comment->load(['user:id,name,email', 'version:id,version_number,file_name']);
+            return $comment->load(['user:id,first_name,last_name,email,avatar', 'version:id,version_number,file_name']);
         });
     }
 
@@ -151,7 +151,7 @@ class DocumentCommentService
 
             $this->notificationService->notifyDocumentCommented($reply, $actor);
 
-            return $reply->load(['user:id,name,email']);
+            return $reply->load(['user:id,first_name,last_name,email,avatar']);
         });
     }
 
@@ -278,10 +278,10 @@ class DocumentCommentService
         }
 
         $paginator = $query->with([
-            'user:id,name,email',
+            'user:id,first_name,last_name,email,avatar',
             'version:id,version_number,file_name',
             'replies' => function ($rq) {
-                $rq->with('user:id,name,email')->orderBy('created_at', 'asc');
+                $rq->with('user:id,first_name,last_name,email,avatar')->orderBy('created_at', 'asc');
             },
         ])
             ->latest('created_at')

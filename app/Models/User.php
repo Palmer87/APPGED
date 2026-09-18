@@ -22,6 +22,8 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
+    protected $appends = ['name'];
+
     /**
      * Get the attributes that should be cast.
      *
@@ -33,6 +35,13 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getNameAttribute(): string
+    {
+        $fullName = trim("{$this->first_name} {$this->last_name}");
+
+        return $fullName !== '' ? $fullName : ($this->email ?? '');
     }
 
     public function organization(): BelongsTo

@@ -11,7 +11,7 @@ class UserPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('users.view');
+        return $user->can('users.view') || $user->hasRole('admin') || $user->hasRole('super-admin');
     }
 
     /**
@@ -19,7 +19,11 @@ class UserPolicy
      */
     public function view(User $user, User $model): bool
     {
-        return $user->can('users.view') && $user->organization_id === $model->organization_id;
+        if ($user->hasRole('super-admin')) {
+            return true;
+        }
+
+        return ($user->can('users.view') || $user->hasRole('admin')) && $user->organization_id === $model->organization_id;
     }
 
     /**
@@ -27,7 +31,7 @@ class UserPolicy
      */
     public function create(User $user): bool
     {
-        return $user->can('users.create');
+        return $user->can('users.create') || $user->hasRole('admin') || $user->hasRole('super-admin');
     }
 
     /**
@@ -35,7 +39,11 @@ class UserPolicy
      */
     public function update(User $user, User $model): bool
     {
-        return $user->can('users.update') && $user->organization_id === $model->organization_id;
+        if ($user->hasRole('super-admin')) {
+            return true;
+        }
+
+        return ($user->can('users.update') || $user->hasRole('admin')) && $user->organization_id === $model->organization_id;
     }
 
     /**
@@ -43,7 +51,11 @@ class UserPolicy
      */
     public function delete(User $user, User $model): bool
     {
-        return $user->can('users.delete') && $user->organization_id === $model->organization_id;
+        if ($user->hasRole('super-admin')) {
+            return true;
+        }
+
+        return ($user->can('users.delete') || $user->hasRole('admin')) && $user->organization_id === $model->organization_id;
     }
 
     /**

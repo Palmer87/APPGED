@@ -18,10 +18,12 @@ class DocumentService
 {
     public function __construct(
         protected ?AuditService $auditService = null,
-        protected ?NotificationService $notificationService = null
+        protected ?NotificationService $notificationService = null,
+        protected ?OcrService $ocrService = null
     ) {
         $this->auditService = $this->auditService ?? app(AuditService::class);
         $this->notificationService = $this->notificationService ?? app(NotificationService::class);
+        $this->ocrService = $this->ocrService ?? app(OcrService::class);
     }
 
     /**
@@ -42,7 +44,7 @@ class DocumentService
         $this->validateFile($file);
 
         $orgId = $data['organization_id'];
-        $disk = $data['storage_disk'] ?? 'private';
+        $disk = $data['storage_disk'] ?? config('filesystems.documents_disk', config('filesystems.default', 'private'));
         $extension = $file->getClientOriginalExtension();
         $mimeType = $file->getMimeType();
         $size = $file->getSize();
@@ -118,11 +120,14 @@ class DocumentService
                 description: "Document '{$document->name}' created with initial version."
             );
 
+            // Automatically dispatch background OCR processing
+            $this->ocrService->dispatchOcr($document, $document->currentVersion);
+
             return $document;
         } catch (\Throwable $e) {
             // Cleanup orphan file if transaction failed
             if ($storedPath) {
-                Storage::disk($data['storage_disk'] ?? 'private')->delete($storedPath);
+                Storage::disk($disk)->delete($storedPath);
             }
 
             throw $e;
@@ -216,6 +221,9 @@ class DocumentService
             );
 
             $this->notificationService->notifyDocumentVersionCreated($document, $user, $version);
+
+            // Automatically dispatch background OCR processing for the new version
+            $this->ocrService->dispatchOcr($document, $version);
 
             return $version;
         } catch (\Throwable $e) {
@@ -315,6 +323,9 @@ class DocumentService
                 description: "Document '{$document->name}' restored to content of version {$version->version_number} (new version {$newVersion->version_number})."
             );
 
+            // Automatically dispatch background OCR processing for the restored version
+            $this->ocrService->dispatchOcr($document, $newVersion);
+
             return $newVersion;
         } catch (\Throwable $e) {
             if ($storedPath) {
@@ -351,10 +362,66 @@ class DocumentService
             abort(404, 'Version file not found on storage');
         }
 
+        $this->auditService->success(
+            action: 'document.downloaded',
+            auditable: $document,
+            target: $version,
+            user: $user,
+            description: "Document '{$document->name}' (V{$version->version_number}) downloaded."
+        );
+
         return Storage::disk($version->storage_disk)->download(
             $version->storage_path,
             $version->file_name
         );
+    }
+
+    /**
+     * Download the latest version of a document.
+     */
+    public function download(Document $document): StreamedResponse
+    {
+        $version = $document->currentVersion;
+        if (! $version) {
+            abort(404, 'Version file not found for this document');
+        }
+
+        return $this->downloadVersion($document, $version);
+    }
+
+    /**
+     * Generate a secure, short-lived signed temporary URL if the disk supports it.
+     * Always validates multi-tenant boundaries and permissions first.
+     */
+    public function getTemporaryUrl(Document $document, ?DocumentVersion $version = null, ?\DateTimeInterface $expiration = null): string
+    {
+        $user = auth()->user();
+
+        if (! $user->hasRole('super-admin') && $user->organization_id !== $document->organization_id) {
+            abort(403, 'You do not belong to this document\'s organization');
+        }
+
+        if ($document->trashed()) {
+            abort(403, 'Cannot generate download URL for a deleted document');
+        }
+
+        Gate::authorize('download', $document);
+
+        $targetVersion = $version ?? $document->currentVersion;
+        if (! $targetVersion) {
+            abort(404, 'Version file not found');
+        }
+
+        $disk = $targetVersion->storage_disk;
+        $path = $targetVersion->storage_path;
+        $expires = $expiration ?? now()->addMinutes(15);
+
+        try {
+            return Storage::disk($disk)->temporaryUrl($path, $expires);
+        } catch (\Throwable) {
+            // Fallback to internal authenticated download route if driver doesn't support temporaryUrl
+            return route('documents.download', $document);
+        }
     }
 
     /**
@@ -375,14 +442,14 @@ class DocumentService
     }
 
     /**
-     * Move a document to another folder within the same organization.
+     * Move a document to another folder (or to root if null) within the same organization.
      */
-    public function move(Document $document, Folder $targetFolder): void
+    public function move(Document $document, ?Folder $targetFolder): void
     {
-        if ($document->organization_id !== $targetFolder->organization_id) {
+        if ($targetFolder && $document->organization_id !== $targetFolder->organization_id) {
             abort(403, 'Target folder belongs to a different organization');
         }
-        $document->folder_id = $targetFolder->id;
+        $document->folder_id = $targetFolder?->id;
         $document->save();
     }
 

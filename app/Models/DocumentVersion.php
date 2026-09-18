@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'document_id',
@@ -40,8 +41,18 @@ class DocumentVersion extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(DocumentComment::class);
+    }
+
+    public function ocr(): HasOne
+    {
+        return $this->hasOne(DocumentOcr::class);
     }
 }
