@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\DocumentCommentController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\DocumentOcrController;
 use App\Http\Controllers\Api\V1\DocumentShareController;
+use App\Http\Controllers\Api\V1\DocumentTypeController;
 use App\Http\Controllers\Api\V1\DocumentVersionController;
 use App\Http\Controllers\Api\V1\FavoriteController;
 use App\Http\Controllers\Api\V1\FolderController;
@@ -56,6 +57,13 @@ Route::prefix('v1')->group(function () {
         Route::prefix('organizations')->group(function () {
             Route::get('/current', [OrganizationController::class, 'current'])->name('api.v1.organizations.current');
         });
+
+        // Document Types
+        Route::prefix('document-types')->group(function () {
+            Route::get('/{id}/metadata', [DocumentTypeController::class, 'metadata'])->name('api.v1.document_types.metadata');
+            Route::post('/{id}/metadata', [DocumentTypeController::class, 'syncMetadata'])->name('api.v1.document_types.metadata.sync');
+        });
+        Route::apiResource('document-types', DocumentTypeController::class)->names('api.v1.document_types');
 
         // Folders
         Route::apiResource('folders', FolderController::class)->names('api.v1.folders');

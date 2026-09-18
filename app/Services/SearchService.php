@@ -43,28 +43,38 @@ class SearchService
             $query->where('documents.organization_id', $validated['organization_id']);
         }
 
-        // 4. Text search ('q') across name, file_name, description
+        // 4. Text search ('q') across name, file_name, description, OCR, and metadata
         if (! empty($validated['q'])) {
             $this->applyTextSearch($query, trim($validated['q']));
         }
 
-        // 5. Folder filter
+        // 5. Department filter (Direction)
+        if (! empty($validated['department_id'])) {
+            $this->applyDepartmentFilter($query, $user, (int) $validated['department_id']);
+        }
+
+        // 6. Document Type filter (Type documentaire)
+        if (! empty($validated['document_type_id'])) {
+            $this->applyDocumentTypeFilter($query, $user, (int) $validated['document_type_id']);
+        }
+
+        // 7. Folder filter
         if (! empty($validated['folder_id'])) {
             $this->applyFolderFilter($query, $user, (int) $validated['folder_id']);
         }
 
-        // 6. Category filter
+        // 8. Category filter
         if (! empty($validated['category_id'])) {
             $this->applyCategoryFilter($query, $user, (int) $validated['category_id']);
         }
 
-        // 7. Tag filters (AND logic when multiple tags are specified)
+        // 9. Tag filters (AND logic when multiple tags are specified)
         $tagIds = $this->extractTagIds($validated);
         if (! empty($tagIds)) {
             $this->applyTagFilters($query, $user, $tagIds);
         }
 
-        // 8. Metadata key/value filter
+        // 10. Metadata key/value filter
         if (! empty($validated['metadata_key'])) {
             $this->applyMetadataFilter(
                 $query,
@@ -74,33 +84,33 @@ class SearchService
             );
         }
 
-        // 9. Date filters (created_at & updated_at)
+        // 11. Date filters (created_at & updated_at)
         $this->applyDateFilters($query, $validated);
 
-        // 10. Extension filter
+        // 12. Extension filter
         if (! empty($validated['extension'])) {
             $ext = strtolower(ltrim(trim($validated['extension']), '.'));
             $query->where('documents.extension', $ext);
         }
 
-        // 11. Status filter ('active', 'archived')
+        // 13. Status filter ('active', 'archived')
         if (! empty($validated['status'])) {
             $query->where('documents.status', $validated['status']);
         }
 
-        // 12. Whitelisted sorting
+        // 14. Whitelisted sorting
         $sortColumn = $validated['sort'] ?? 'created_at';
         $sortDirection = strtolower($validated['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
         $query->orderBy("documents.{$sortColumn}", $sortDirection);
 
-        // 13. Pagination (default: 15, max: 100 enforced by validator)
+        // 15. Pagination (default: 15, max: 100 enforced by validator)
         $perPage = isset($validated['per_page']) ? (int) $validated['per_page'] : 15;
 
         return $query->paginate($perPage);
     }
 
     /**
-     * Apply case-insensitive full-text and partial search across name, file_name, and description.
+     * Apply case-insensitive full-text and partial search across name, file_name, description, OCR, and metadata.
      */
     protected function applyTextSearch(Builder $query, string $term): void
     {
@@ -116,6 +126,10 @@ class SearchService
                         "to_tsvector('simple', coalesce(documents.name, '') || ' ' || coalesce(documents.file_name, '') || ' ' || coalesce(documents.description, '')) @@ plainto_tsquery('simple', ?)",
                         [$term]
                     )
+                    ->orWhereHas('metadataValues', function (Builder $mq) use ($wildcard) {
+                        $mq->where('value_string', 'ilike', $wildcard)
+                            ->orWhere('value_text', 'ilike', $wildcard);
+                    })
                     ->orWhereHas('ocrs', function (Builder $oq) use ($term, $wildcard) {
                         $oq->where('status', 'completed')
                             ->where(function (Builder $toq) use ($term, $wildcard) {
@@ -130,12 +144,73 @@ class SearchService
                 $sub->whereRaw('LOWER(documents.name) LIKE ?', [$wildcard])
                     ->orWhereRaw('LOWER(documents.file_name) LIKE ?', [$wildcard])
                     ->orWhereRaw('LOWER(documents.description) LIKE ?', [$wildcard])
+                    ->orWhereHas('metadataValues', function (Builder $mq) use ($wildcard) {
+                        $mq->whereRaw('LOWER(value_string) LIKE ?', [$wildcard])
+                            ->orWhereRaw('LOWER(value_text) LIKE ?', [$wildcard]);
+                    })
                     ->orWhereHas('ocrs', function (Builder $oq) use ($wildcard) {
                         $oq->where('status', 'completed')
                             ->whereRaw('LOWER(extracted_text) LIKE ?', [$wildcard]);
                     });
             });
         }
+    }
+
+    /**
+     * Apply department filter (Direction).
+     */
+    protected function applyDepartmentFilter(Builder $query, User $user, int $deptId): void
+    {
+        $deptQuery = Folder::where('id', $deptId)->whereNull('deleted_at');
+        if (! $user->hasRole('super-admin')) {
+            $deptQuery->where('organization_id', $user->organization_id);
+        }
+        $deptFolder = $deptQuery->first();
+        if (! $deptFolder) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $descendantQuery = Folder::where('organization_id', $deptFolder->organization_id)->whereNull('deleted_at');
+        if (! empty($deptFolder->path)) {
+            $descendantQuery->where(function ($q) use ($deptFolder) {
+                $q->where('path', 'like', $deptFolder->path.'%')
+                    ->orWhere('parent_id', $deptFolder->id);
+            });
+        } else {
+            $descendantQuery->where('parent_id', $deptFolder->id);
+        }
+
+        $descendantIds = $descendantQuery->pluck('id')
+            ->push($deptFolder->id)
+            ->all();
+
+        $query->where(function (Builder $q) use ($descendantIds) {
+            $q->whereIn('documents.folder_id', $descendantIds)
+                ->orWhereIn('documents.document_type_id', $descendantIds);
+        });
+    }
+
+    /**
+     * Apply document type filter.
+     */
+    protected function applyDocumentTypeFilter(Builder $query, User $user, int $typeId): void
+    {
+        $typeQuery = Folder::where('id', $typeId)->whereNull('deleted_at');
+        if (! $user->hasRole('super-admin')) {
+            $typeQuery->where('organization_id', $user->organization_id);
+        }
+        if (! $typeQuery->exists()) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(function (Builder $q) use ($typeId) {
+            $q->where('documents.document_type_id', $typeId)
+                ->orWhere('documents.folder_id', $typeId);
+        });
     }
 
     /**

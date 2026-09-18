@@ -64,6 +64,14 @@ class DocumentMetadataService
     }
 
     /**
+     * Alias for setValue for compatibility.
+     */
+    public function setMetadata(Document $document, MetadataDefinition $definition, mixed $value, ?User $user = null): DocumentMetadata
+    {
+        return $this->setValue($document, $definition, $value);
+    }
+
+    /**
      * Set multiple metadata values atomically for a document.
      *
      * @param  array<string, mixed>  $values  associative array of [key => value]
@@ -80,8 +88,8 @@ class DocumentMetadataService
             ->get()
             ->keyBy('key');
 
-        // Check required active definitions in the organization
-        $requiredDefinitions = $definitions->filter(fn ($d) => $d->is_active && $d->is_required);
+        // Check required active definitions scoped to document type or organization
+        $requiredDefinitions = $this->getRequiredDefinitionsForDocument($document, $definitions);
         foreach ($requiredDefinitions as $reqKey => $reqDef) {
             if (! array_key_exists($reqKey, $values) || $values[$reqKey] === null || $values[$reqKey] === '') {
                 abort(422, "Required metadata field '{$reqKey}' is missing");
@@ -282,5 +290,34 @@ class DocumentMetadataService
         }
 
         return $storage;
+    }
+
+    /**
+     * Get required definitions applicable for this document.
+     */
+    public function getRequiredDefinitionsForDocument(Document $document, Collection $definitions): Collection
+    {
+        $docType = $document->documentType ?? $document->folder?->getDocumentType();
+
+        if ($docType) {
+            $typeDefs = $docType->metadataDefinitions()->where('is_active', true)->get();
+
+            return $typeDefs->filter(function ($def) {
+                $required = $def->pivot->is_required ?? $def->is_required;
+
+                return (bool) $required;
+            })->keyBy('key');
+        }
+
+        // Untyped document: only require definitions not tied exclusively to document types
+        $scopedDefIds = DB::table('folder_metadata_definition')->pluck('metadata_definition_id')->unique()->toArray();
+
+        return $definitions->filter(function ($d) use ($scopedDefIds) {
+            if (! $d->is_active || ! $d->is_required) {
+                return false;
+            }
+
+            return ! in_array($d->id, $scopedDefIds, true);
+        });
     }
 }

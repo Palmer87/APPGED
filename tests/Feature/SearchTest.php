@@ -230,7 +230,8 @@ class SearchTest extends TestCase
 
     public function test_document_without_acl_is_absent(): void
     {
-        $this->createDocument(['name' => 'SecretSansAcl.pdf']);
+        $otherUser = User::factory()->create(['organization_id' => $this->orgA->id]);
+        $this->createDocument(['name' => 'SecretSansAcl.pdf', 'uploaded_by' => $otherUser->id]);
 
         $results = $this->searchService->search($this->userA, ['q' => 'SecretSansAcl']);
 
@@ -280,7 +281,8 @@ class SearchTest extends TestCase
 
     public function test_document_after_acl_revocation_is_absent(): void
     {
-        $doc = $this->createDocument(['name' => 'RevokeAcl.pdf']);
+        $otherUser = User::factory()->create(['organization_id' => $this->orgA->id]);
+        $doc = $this->createDocument(['name' => 'RevokeAcl.pdf', 'uploaded_by' => $otherUser->id]);
         $this->aclService->grantDocumentPermission($doc, $this->userA, 'view');
 
         $this->assertCount(1, $this->searchService->search($this->userA, ['q' => 'RevokeAcl']));

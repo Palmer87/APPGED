@@ -90,4 +90,19 @@ class FolderPolicy
 
         return true;
     }
+
+    public function createDepartment(User $user): bool
+    {
+        return $user->can('folders.create') || $user->hasRole('admin') || $user->hasRole('super-admin');
+    }
+
+    public function createDocumentType(User $user): bool
+    {
+        return $user->can('folders.create') || $user->hasRole('admin') || $user->hasRole('super-admin');
+    }
+
+    public function manageMetadata(User $user, Folder $folder): bool
+    {
+        return $this->update($user, $folder);
+    }
 }

@@ -52,4 +52,21 @@ class MetadataDefinition extends Model
             'document_id'
         );
     }
+
+    public function folders(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            Folder::class,
+            'folder_metadata_definition',
+            'metadata_definition_id',
+            'folder_id'
+        )
+            ->withPivot(['is_required', 'order'])
+            ->withTimestamps();
+    }
+
+    public function documentTypes(): BelongsToMany
+    {
+        return $this->folders();
+    }
 }

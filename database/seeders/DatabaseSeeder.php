@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             TagSeeder::class,
             MetadataDefinitionSeeder::class,
+            DocumentStructureSeeder::class,
         ]);
 
         $organization = Organization::query()->where('slug', 'ged-demo')->firstOrFail();

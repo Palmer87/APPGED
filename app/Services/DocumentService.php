@@ -33,12 +33,14 @@ class DocumentService
      */
     public function upload(array $data, UploadedFile $file): Document
     {
-        // Validate tenant ownership of folder (if provided)
+        // Validate tenant ownership of folder (if provided) and resolve document type
+        $documentTypeId = null;
         if (! empty($data['folder_id'])) {
             $folder = Folder::findOrFail($data['folder_id']);
             if ($folder->organization_id !== $data['organization_id']) {
                 abort(403, 'Folder does not belong to your organization');
             }
+            $documentTypeId = $folder->getDocumentType()?->id;
         }
 
         $this->validateFile($file);
@@ -57,6 +59,7 @@ class DocumentService
         $docAttributes = [
             'organization_id' => $orgId,
             'folder_id' => $data['folder_id'] ?? null,
+            'document_type_id' => $data['document_type_id'] ?? $documentTypeId,
             'uploaded_by' => $data['uploaded_by'],
             'name' => $data['name'] ?? $file->getClientOriginalName(),
             'description' => $data['description'] ?? null,
@@ -449,8 +452,29 @@ class DocumentService
         if ($targetFolder && $document->organization_id !== $targetFolder->organization_id) {
             abort(403, 'Target folder belongs to a different organization');
         }
+
+        $oldFolderId = $document->folder_id;
+        $oldDocTypeId = $document->document_type_id;
+
+        $newDocTypeId = $targetFolder ? $targetFolder->getDocumentType()?->id : null;
+
         $document->folder_id = $targetFolder?->id;
+        $document->document_type_id = $newDocTypeId;
         $document->save();
+
+        $this->auditService->success(
+            action: 'document.moved',
+            auditable: $document,
+            oldValues: [
+                'folder_id' => $oldFolderId,
+                'document_type_id' => $oldDocTypeId,
+            ],
+            newValues: [
+                'folder_id' => $document->folder_id,
+                'document_type_id' => $document->document_type_id,
+            ],
+            description: "Document '{$document->name}' moved."
+        );
     }
 
     /**

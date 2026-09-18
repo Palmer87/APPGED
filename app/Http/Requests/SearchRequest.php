@@ -25,6 +25,8 @@ class SearchRequest extends FormRequest
         return [
             'q' => ['nullable', 'string', 'max:255'],
             'organization_id' => ['nullable', 'integer'],
+            'department_id' => ['nullable', 'integer'],
+            'document_type_id' => ['nullable', 'integer'],
             'folder_id' => ['nullable', 'integer'],
             'category_id' => ['nullable', 'integer'],
             'tag_id' => ['nullable', 'integer'],

@@ -30,7 +30,11 @@ import {
     Home,
     CornerDownRight,
     X,
-    Check
+    Check,
+    Building2,
+    FileStack,
+    Sliders,
+    Plus
 } from 'lucide-react';
 
 export default function FoldersIndex({
@@ -42,6 +46,8 @@ export default function FoldersIndex({
     tree = [],
     filters = {},
     can = {},
+    documentType = null,
+    metadataDefinitions = [],
 }) {
     // UI state
     const [viewMode, setViewMode] = useState(() => {
@@ -75,6 +81,7 @@ export default function FoldersIndex({
         name: '',
         description: '',
         parent_id: currentFolder?.id || '',
+        folder_type: currentFolder?.folder_type === 'department' ? 'document_type' : 'standard',
     });
 
     const editForm = useForm({
@@ -97,7 +104,15 @@ export default function FoldersIndex({
         name: '',
         description: '',
         folder_id: currentFolder?.id || '',
+        metadata: {},
     });
+
+    const handleMetadataChange = (keyOrId, value) => {
+        uploadForm.setData('metadata', {
+            ...uploadForm.data.metadata,
+            [keyOrId]: value,
+        });
+    };
 
     // Subfolder & Document filtering by search
     const filteredSubfolders = useMemo(() => {
@@ -565,6 +580,105 @@ export default function FoldersIndex({
 
                     {/* Main Explorer Content Panel */}
                     <div className="flex-1 min-w-0 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-4 md:p-6 space-y-6">
+                        {/* Direction Banner */}
+                        {currentFolder?.folder_type === 'department' && (
+                            <div className="rounded-2xl bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 p-5 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shrink-0">
+                                        <Building2 className="w-6 h-6 text-indigo-200" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Badge variant="primary" className="bg-white/20 text-white border-white/30 text-[10px] uppercase tracking-wider font-bold">
+                                                Direction
+                                            </Badge>
+                                            <span className="text-xs text-indigo-200">Organisation</span>
+                                        </div>
+                                        <h1 className="text-lg font-bold text-white">{currentFolder.name}</h1>
+                                        {currentFolder.description && (
+                                            <p className="text-xs text-indigo-200 mt-1 max-w-xl">{currentFolder.description}</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {can.create_document_type && (
+                                        <Button
+                                            variant="secondary"
+                                            size="sm"
+                                            className="bg-white/10 hover:bg-white/20 text-white border-white/20"
+                                            onClick={() => {
+                                                createForm.setData({
+                                                    name: '',
+                                                    description: '',
+                                                    parent_id: currentFolder.id,
+                                                    folder_type: 'document_type',
+                                                });
+                                                setCreateFolderModalOpen(true);
+                                            }}
+                                        >
+                                            <Plus className="w-4 h-4 mr-1 text-indigo-200" />
+                                            <span>Nouveau type documentaire</span>
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Document Type Banner */}
+                        {currentFolder?.folder_type === 'document_type' && (
+                            <div className="rounded-2xl bg-gradient-to-r from-purple-900 via-purple-800 to-slate-900 p-5 text-white shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex items-start gap-4">
+                                    <div className="p-3 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shrink-0">
+                                        <FileStack className="w-6 h-6 text-purple-200" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <Badge variant="purple" className="bg-white/20 text-white border-white/30 text-[10px] uppercase tracking-wider font-bold">
+                                                Type documentaire
+                                            </Badge>
+                                            {parentFolder && (
+                                                <span className="text-xs text-purple-200">
+                                                    Direction : <strong className="text-white">{parentFolder.name}</strong>
+                                                </span>
+                                            )}
+                                        </div>
+                                        <h1 className="text-lg font-bold text-white">{currentFolder.name}</h1>
+                                        {currentFolder.description && (
+                                            <p className="text-xs text-purple-200 mt-1 max-w-xl">{currentFolder.description}</p>
+                                        )}
+                                        <div className="flex items-center gap-3 mt-3 text-xs text-purple-200">
+                                            <span className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/15">
+                                                {filteredDocuments.length} document{filteredDocuments.length > 1 ? 's' : ''}
+                                            </span>
+                                            <span className="bg-white/10 px-2.5 py-1 rounded-lg border border-white/15">
+                                                {metadataDefinitions.length} métadonnée{metadataDefinitions.length > 1 ? 's' : ''} configurée{metadataDefinitions.length > 1 ? 's' : ''}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <Link
+                                        href={`/document-types/${currentFolder.id}/metadata`}
+                                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition shadow-sm"
+                                    >
+                                        <Sliders className="w-4 h-4 text-purple-200" />
+                                        <span>Gérer les métadonnées</span>
+                                    </Link>
+                                    {can.upload_document && (
+                                        <Button
+                                            variant="primary"
+                                            size="sm"
+                                            className="bg-purple-600 hover:bg-purple-500 border-purple-400"
+                                            onClick={() => setUploadModalOpen(true)}
+                                        >
+                                            <Upload className="w-4 h-4 mr-1" />
+                                            <span>Ajouter un document</span>
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Empty Folder State */}
                         {filteredSubfolders.length === 0 && filteredDocuments.length === 0 ? (
                             <EmptyState
@@ -645,13 +759,35 @@ export default function FoldersIndex({
                                                                     href={`/folders/${folder.id}`}
                                                                     className="flex items-center gap-3 flex-1 min-w-0"
                                                                 >
-                                                                    <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600 border border-amber-200 group-hover:scale-105 transition shadow-2xs shrink-0">
-                                                                        <FolderIcon className="w-5 h-5 fill-amber-500" />
-                                                                    </div>
+                                                                    {folder.folder_type === 'department' ? (
+                                                                        <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-200 group-hover:scale-105 transition shadow-2xs shrink-0">
+                                                                            <Building2 className="w-5 h-5" />
+                                                                        </div>
+                                                                    ) : folder.folder_type === 'document_type' ? (
+                                                                        <div className="p-2.5 rounded-xl bg-purple-50 text-purple-600 border border-purple-200 group-hover:scale-105 transition shadow-2xs shrink-0">
+                                                                            <FileStack className="w-5 h-5" />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div className="p-2.5 rounded-xl bg-amber-100 text-amber-600 border border-amber-200 group-hover:scale-105 transition shadow-2xs shrink-0">
+                                                                            <FolderIcon className="w-5 h-5 fill-amber-500" />
+                                                                        </div>
+                                                                    )}
                                                                     <div className="min-w-0">
-                                                                        <h3 className="text-xs font-bold text-slate-900 truncate group-hover:text-indigo-600 transition">
-                                                                            {folder.name}
-                                                                        </h3>
+                                                                        <div className="flex items-center gap-1.5">
+                                                                            <h3 className="text-xs font-bold text-slate-900 truncate group-hover:text-indigo-600 transition">
+                                                                                {folder.name}
+                                                                            </h3>
+                                                                            {folder.folder_type === 'department' && (
+                                                                                <Badge variant="info" size="sm" className="text-[9px] py-0 px-1.5">
+                                                                                    Direction
+                                                                                </Badge>
+                                                                            )}
+                                                                            {folder.folder_type === 'document_type' && (
+                                                                                <Badge variant="purple" size="sm" className="text-[9px] py-0 px-1.5">
+                                                                                    Type doc.
+                                                                                </Badge>
+                                                                            )}
+                                                                        </div>
                                                                         <span className="text-[11px] text-slate-400">
                                                                             {folder.items_count} élément{folder.items_count > 1 ? 's' : ''}
                                                                         </span>
@@ -751,11 +887,25 @@ export default function FoldersIndex({
                                                                             href={`/folders/${folder.id}`}
                                                                             className="flex items-center gap-2.5 text-slate-900 font-semibold group-hover:text-indigo-600"
                                                                         >
-                                                                            <FolderIcon className="w-4 h-4 text-amber-500 fill-amber-100 shrink-0" />
+                                                                            {folder.folder_type === 'department' ? (
+                                                                                <Building2 className="w-4 h-4 text-indigo-600 shrink-0" />
+                                                                            ) : folder.folder_type === 'document_type' ? (
+                                                                                <FileStack className="w-4 h-4 text-purple-600 shrink-0" />
+                                                                            ) : (
+                                                                                <FolderIcon className="w-4 h-4 text-amber-500 fill-amber-100 shrink-0" />
+                                                                            )}
                                                                             <span>{folder.name}</span>
                                                                         </Link>
                                                                     </td>
-                                                                    <td className="py-2.5 px-4 text-slate-500">Dossier</td>
+                                                                    <td className="py-2.5 px-4 text-slate-500">
+                                                                        {folder.folder_type === 'department' ? (
+                                                                            <Badge variant="info" size="sm">Direction</Badge>
+                                                                        ) : folder.folder_type === 'document_type' ? (
+                                                                            <Badge variant="purple" size="sm">Type documentaire</Badge>
+                                                                        ) : (
+                                                                            <span>Dossier</span>
+                                                                        )}
+                                                                    </td>
                                                                     <td className="py-2.5 px-4 text-slate-500">
                                                                         {folder.items_count} élément{folder.items_count > 1 ? 's' : ''}
                                                                     </td>
@@ -1012,6 +1162,25 @@ export default function FoldersIndex({
                 title={currentFolder ? `Nouveau sous-dossier dans "${currentFolder.name}"` : 'Nouveau dossier racine'}
             >
                 <form onSubmit={handleCreateFolder} className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-semibold text-slate-700 mb-1">
+                            Type d'élément
+                        </label>
+                        <select
+                            value={createForm.data.folder_type || 'standard'}
+                            onChange={(e) => createForm.setData('folder_type', e.target.value)}
+                            className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white"
+                        >
+                            <option value="standard">Dossier standard</option>
+                            {(!currentFolder || isRoot) && can.create_department && (
+                                <option value="department">Direction (Niveau 1)</option>
+                            )}
+                            {(currentFolder?.folder_type === 'department' || can.create_document_type) && (
+                                <option value="document_type">Type documentaire</option>
+                            )}
+                        </select>
+                    </div>
+
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">
                             Nom du dossier <span className="text-rose-500">*</span>
@@ -1312,6 +1481,69 @@ export default function FoldersIndex({
                             className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                         />
                     </div>
+
+                    {metadataDefinitions && metadataDefinitions.length > 0 && (
+                        <div className="pt-3 border-t border-slate-200 space-y-3">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                                    Métadonnées associées
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                    {currentFolder?.name}
+                                </span>
+                            </div>
+                            <div className="space-y-2.5 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                {metadataDefinitions.map((def) => (
+                                    <div key={def.id}>
+                                        <label className="block text-xs font-medium text-slate-700 mb-1">
+                                            {def.name}
+                                            {def.is_required && <span className="text-rose-500 ml-0.5">*</span>}
+                                        </label>
+                                        {def.type === 'boolean' ? (
+                                            <select
+                                                value={uploadForm.data.metadata[def.id] ?? ''}
+                                                onChange={(e) => handleMetadataChange(def.id, e.target.value)}
+                                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                            >
+                                                <option value="">-- Non spécifié --</option>
+                                                <option value="1">Oui</option>
+                                                <option value="0">Non</option>
+                                            </select>
+                                        ) : def.type === 'date' ? (
+                                            <input
+                                                type="date"
+                                                required={def.is_required}
+                                                value={uploadForm.data.metadata[def.id] ?? ''}
+                                                onChange={(e) => handleMetadataChange(def.id, e.target.value)}
+                                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                            />
+                                        ) : (def.type === 'integer' || def.type === 'float') ? (
+                                            <input
+                                                type="number"
+                                                step={def.type === 'float' ? '0.01' : '1'}
+                                                required={def.is_required}
+                                                value={uploadForm.data.metadata[def.id] ?? ''}
+                                                onChange={(e) => handleMetadataChange(def.id, e.target.value)}
+                                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                            />
+                                        ) : (
+                                            <input
+                                                type="text"
+                                                required={def.is_required}
+                                                placeholder={def.description || `Entrez ${def.name.toLowerCase()}`}
+                                                value={uploadForm.data.metadata[def.id] ?? ''}
+                                                onChange={(e) => handleMetadataChange(def.id, e.target.value)}
+                                                className="w-full px-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                                            />
+                                        )}
+                                        {def.description && (
+                                            <p className="text-[10px] text-slate-400 mt-0.5">{def.description}</p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="flex justify-end gap-2 pt-2">
                         <Button

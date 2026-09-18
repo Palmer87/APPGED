@@ -118,6 +118,8 @@ class FolderWebController extends Controller
                 'name' => $f->name,
                 'description' => $f->description,
                 'parent_id' => $f->parent_id,
+                'folder_type' => $f->folder_type?->value ?? 'standard',
+                'is_active' => (bool) $f->is_active,
                 'path' => $f->path,
                 'documents_count' => $f->documents_count ?? 0,
                 'subfolders_count' => $f->subfolders_count ?? 0,
@@ -161,6 +163,7 @@ class FolderWebController extends Controller
                     'size_human' => $this->formatBytes($doc->size),
                     'status' => $doc->status,
                     'folder_id' => $doc->folder_id,
+                    'document_type_id' => $doc->document_type_id,
                     'updated_at' => $doc->updated_at?->toISOString(),
                     'created_at' => $doc->created_at?->toISOString(),
                     'creator' => $doc->creator ? [
@@ -174,18 +177,35 @@ class FolderWebController extends Controller
         // 4. Lightweight Folder Tree of the entire organization for navigation & move modals
         $tree = Folder::query()
             ->where('organization_id', $orgId)
-            ->select(['id', 'name', 'parent_id'])
+            ->select(['id', 'name', 'parent_id', 'folder_type'])
             ->orderBy('name')
             ->get()
             ->map(fn ($f) => [
                 'id' => $f->id,
                 'name' => $f->name,
                 'parent_id' => $f->parent_id,
+                'folder_type' => $f->folder_type?->value ?? 'standard',
             ]);
 
-        // 5. User permissions context
+        // 5. Document Type & Metadata Definitions context
+        $docType = $currentFolder?->getDocumentType();
+        $metadataDefinitions = $docType
+            ? $docType->metadataDefinitions()->where('is_active', true)->orderByPivot('order')->get()->map(fn ($d) => [
+                'id' => $d->id,
+                'name' => $d->name,
+                'key' => $d->key,
+                'type' => $d->type,
+                'is_required' => $d->pivot->is_required !== null ? (bool) $d->pivot->is_required : (bool) $d->is_required,
+                'order' => (int) $d->pivot->order,
+                'description' => $d->description,
+            ])
+            : [];
+
+        // 6. User permissions context
         $can = [
             'create_folder' => $user->can('create', Folder::class),
+            'create_department' => $user->can('createDepartment', Folder::class),
+            'create_document_type' => $user->can('createDocumentType', Folder::class),
             'upload_document' => $user->can('create', Document::class),
             'update_folder' => $currentFolder ? $user->can('update', $currentFolder) : false,
             'delete_folder' => $currentFolder ? $user->can('delete', $currentFolder) : false,
@@ -197,6 +217,8 @@ class FolderWebController extends Controller
                 'name' => $currentFolder->name,
                 'description' => $currentFolder->description,
                 'parent_id' => $currentFolder->parent_id,
+                'folder_type' => $currentFolder->folder_type?->value ?? 'standard',
+                'is_active' => (bool) $currentFolder->is_active,
                 'path' => $currentFolder->path,
                 'created_at' => $currentFolder->created_at?->toISOString(),
                 'updated_at' => $currentFolder->updated_at?->toISOString(),
@@ -206,6 +228,11 @@ class FolderWebController extends Controller
             'subfolders' => $subfolders,
             'folders' => $subfolders,
             'documents' => $documents,
+            'documentType' => $docType ? [
+                'id' => $docType->id,
+                'name' => $docType->name,
+            ] : null,
+            'metadataDefinitions' => $metadataDefinitions,
             'tree' => $tree,
             'filters' => [
                 'search' => $search,
@@ -225,6 +252,7 @@ class FolderWebController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
             'parent_id' => ['nullable', 'integer', 'exists:folders,id'],
+            'folder_type' => ['nullable', 'string', 'in:standard,department,document_type'],
         ]);
 
         if (! empty($validated['parent_id'])) {
@@ -234,7 +262,7 @@ class FolderWebController extends Controller
 
         $folder = $this->folderService->create($validated, $request->user());
 
-        return back()->with('success', "Dossier '{$folder->name}' créé avec succès.");
+        return back()->with('success', "{$folder->folder_type->label()} '{$folder->name}' créé avec succès.");
     }
 
     /**

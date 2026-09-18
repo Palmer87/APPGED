@@ -244,11 +244,14 @@ class DocumentWebController extends Controller
 
         // Custom metadata values
         if ($metadata = $request->input('metadata')) {
-            foreach ($metadata as $defId => $value) {
+            foreach ($metadata as $keyOrId => $value) {
                 if ($value !== null && $value !== '') {
-                    $def = MetadataDefinition::find($defId);
-                    if ($def && $def->organization_id === $user->organization_id) {
-                        $this->metadataService->setMetadata($document, $def, $value, $user);
+                    $def = is_numeric($keyOrId)
+                        ? MetadataDefinition::where('organization_id', $user->organization_id)->find($keyOrId)
+                        : MetadataDefinition::where('organization_id', $user->organization_id)->where('key', $keyOrId)->first();
+
+                    if ($def) {
+                        $this->metadataService->setValue($document, $def, $value);
                     }
                 }
             }

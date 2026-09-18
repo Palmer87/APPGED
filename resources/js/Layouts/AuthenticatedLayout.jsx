@@ -23,7 +23,8 @@ import {
     ChevronDown,
     Building2,
     Shield,
-    Users
+    Users,
+    FileStack
 } from 'lucide-react';
 import Toast from '../Components/Toast';
 
@@ -92,6 +93,8 @@ export default function AuthenticatedLayout({ children, title }) {
 
     if (isAdmin || isManager || permissions.includes('users.view') || permissions.includes('roles.view')) {
         const adminItems = [
+            { name: 'Directions', href: '/departments', icon: Building2, current: isUrl('/departments') },
+            { name: 'Types documentaires', href: '/document-types', icon: FileStack, current: isUrl('/document-types') },
             { name: 'Catégories', href: '/categories', icon: FolderTree, current: isUrl('/categories') },
             { name: 'Tags', href: '/tags', icon: TagsIcon, current: isUrl('/tags') },
             { name: 'Métadonnées', href: '/metadata', icon: FileSpreadsheet, current: isUrl('/metadata') },

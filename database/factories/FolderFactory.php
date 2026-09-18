@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\FolderType;
 use App\Models\Folder;
 use App\Models\Organization;
 use App\Models\User;
@@ -27,11 +28,13 @@ class FolderFactory extends Factory
         return [
             'organization_id' => Organization::factory(),
             'parent_id' => null,
+            'folder_type' => FolderType::Standard,
             'name' => $this->faker->unique()->word(),
             'description' => $this->faker->sentence(),
             'path' => null,
             'created_by' => User::factory(),
             'is_archived' => false,
+            'is_active' => true,
         ];
     }
 
@@ -41,6 +44,27 @@ class FolderFactory extends Factory
     public function root(): static
     {
         return $this->state(fn () => ['parent_id' => null]);
+    }
+
+    /**
+     * State for a department folder (direction).
+     */
+    public function department(): static
+    {
+        return $this->state(fn () => [
+            'parent_id' => null,
+            'folder_type' => FolderType::Department,
+        ]);
+    }
+
+    /**
+     * State for a document type folder.
+     */
+    public function documentType(): static
+    {
+        return $this->state(fn () => [
+            'folder_type' => FolderType::DocumentType,
+        ]);
     }
 
     /**

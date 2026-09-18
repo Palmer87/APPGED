@@ -10,6 +10,8 @@ use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Web\AuthWebController;
 use App\Http\Controllers\Web\CategoryWebController;
+use App\Http\Controllers\Web\DepartmentWebController;
+use App\Http\Controllers\Web\DocumentTypeWebController;
 use App\Http\Controllers\Web\DocumentWebController;
 use App\Http\Controllers\Web\FavoriteWebController;
 use App\Http\Controllers\Web\FolderWebController;
@@ -64,6 +66,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/folders/{folder}', [FolderWebController::class, 'show'])->name('folders.show');
     Route::put('/folders/{folder}', [FolderWebController::class, 'update'])->name('folders.update');
     Route::delete('/folders/{folder}', [FolderWebController::class, 'destroy'])->name('folders.destroy');
+
+    // Departments (Directions) Web
+    Route::get('/departments', [DepartmentWebController::class, 'index'])->name('departments.index');
+    Route::post('/departments', [DepartmentWebController::class, 'store'])->name('departments.store');
+    Route::put('/departments/{department}', [DepartmentWebController::class, 'update'])->name('departments.update');
+    Route::delete('/departments/{department}', [DepartmentWebController::class, 'destroy'])->name('departments.destroy');
+
+    // Document Types Web
+    Route::get('/document-types', [DocumentTypeWebController::class, 'index'])->name('document_types.index');
+    Route::post('/document-types', [DocumentTypeWebController::class, 'store'])->name('document_types.store');
+    Route::put('/document-types/{documentType}', [DocumentTypeWebController::class, 'update'])->name('document_types.update');
+    Route::delete('/document-types/{documentType}', [DocumentTypeWebController::class, 'destroy'])->name('document_types.destroy');
+    Route::get('/document-types/{documentType}/metadata', [DocumentTypeWebController::class, 'metadata'])->name('document_types.metadata');
+    Route::post('/document-types/{documentType}/metadata', [DocumentTypeWebController::class, 'syncMetadata'])->name('document_types.metadata.sync');
 
     // Search Web
     Route::get('/search', [SearchWebController::class, 'index'])->name('search.index');

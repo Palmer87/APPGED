@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'organization_id',
     'folder_id',
+    'document_type_id',
     'uploaded_by',
     'name',
     'description',
@@ -40,6 +41,20 @@ class Document extends Model
     public function folder(): BelongsTo
     {
         return $this->belongsTo(Folder::class);
+    }
+
+    public function documentType(): BelongsTo
+    {
+        return $this->belongsTo(Folder::class, 'document_type_id');
+    }
+
+    public function getDepartment(): ?Folder
+    {
+        if ($this->documentType) {
+            return $this->documentType->getDepartment();
+        }
+
+        return $this->folder?->getDepartment();
     }
 
     public function uploader(): BelongsTo
