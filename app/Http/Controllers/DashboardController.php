@@ -43,14 +43,6 @@ class DashboardController extends Controller
             return response()->json($data);
         }
 
-        if ($request->header('X-Inertia')) {
-            return Inertia::render('Dashboard/Index', $data);
-        }
-
-        if (view()->exists('dashboard')) {
-            return view('dashboard', $data);
-        }
-
         return Inertia::render('Dashboard/Index', $data);
     }
 }

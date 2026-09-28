@@ -54,7 +54,7 @@ export default function SharesIndex({ receivedShares = [], sentShares = [] }) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 text-xs text-slate-600">
-                                                {share.shared_by?.name || 'Inconnu'}
+                                                {share.shared_by?.name || (share.shared_by?.first_name ? `${share.shared_by.first_name} ${share.shared_by.last_name || ''}`.trim() : (share.shared_by?.email || 'Inconnu'))}
                                             </td>
                                             <td className="px-6 py-4 text-xs">
                                                 <Badge variant="primary" size="sm">
@@ -103,7 +103,7 @@ export default function SharesIndex({ receivedShares = [], sentShares = [] }) {
                                                 {share.user ? (
                                                     <span className="inline-flex items-center gap-1.5 font-medium">
                                                         <User className="w-3.5 h-3.5 text-slate-400" />
-                                                        {share.user.name}
+                                                        {share.user.name || (share.user.first_name ? `${share.user.first_name} ${share.user.last_name || ''}`.trim() : (share.user.email || 'Utilisateur'))}
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center gap-1.5 font-medium text-purple-700">

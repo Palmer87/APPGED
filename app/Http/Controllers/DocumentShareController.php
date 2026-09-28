@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\DocumentShareService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 
@@ -41,7 +42,7 @@ class DocumentShareController extends Controller
     /**
      * Share a document with a user.
      */
-    public function storeUserShare(StoreUserDocumentShareRequest $request, Document $document): JsonResponse
+    public function storeUserShare(StoreUserDocumentShareRequest $request, Document $document): JsonResponse|RedirectResponse
     {
         $actor = $request->user();
 
@@ -57,13 +58,17 @@ class DocumentShareController extends Controller
 
         $share = $this->shareService->shareWithUser($actor, $document, $targetUser, $permission, $expiresAt);
 
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', "Document partagé avec {$targetUser->name} avec succès.");
+        }
+
         return response()->json($share, 201);
     }
 
     /**
      * Share a document with a group.
      */
-    public function storeGroupShare(StoreGroupDocumentShareRequest $request, Document $document): JsonResponse
+    public function storeGroupShare(StoreGroupDocumentShareRequest $request, Document $document): JsonResponse|RedirectResponse
     {
         $actor = $request->user();
 
@@ -79,13 +84,17 @@ class DocumentShareController extends Controller
 
         $share = $this->shareService->shareWithGroup($actor, $document, $group, $permission, $expiresAt);
 
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', "Document partagé avec le groupe {$group->name} avec succès.");
+        }
+
         return response()->json($share, 201);
     }
 
     /**
      * Revoke a document share.
      */
-    public function destroy(Request $request, Document $document, DocumentShare $share): JsonResponse
+    public function destroy(Request $request, Document $document, DocumentShare $share): JsonResponse|RedirectResponse
     {
         $actor = $request->user();
 
@@ -100,6 +109,10 @@ class DocumentShareController extends Controller
         Gate::forUser($actor)->authorize('share', $document);
 
         $this->shareService->revoke($actor, $share);
+
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', 'Partage révoqué avec succès.');
+        }
 
         return response()->json(['message' => 'Share successfully revoked']);
     }

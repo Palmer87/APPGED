@@ -84,6 +84,15 @@ class SearchService
             );
         }
 
+        // 10b. Metadata array filter for dynamic forms
+        if (! empty($validated['metadata']) && is_array($validated['metadata'])) {
+            foreach ($validated['metadata'] as $mKey => $mVal) {
+                if ($mVal !== null && $mVal !== '') {
+                    $this->applyMetadataFilter($query, $user, (string) $mKey, $mVal);
+                }
+            }
+        }
+
         // 11. Date filters (created_at & updated_at)
         $this->applyDateFilters($query, $validated);
 
@@ -364,7 +373,7 @@ class SearchService
                     'date' => $mq->whereDate('value_date', $metadataValue),
                     'datetime' => $mq->where('value_datetime', Carbon::parse($metadataValue)),
                     'text' => $mq->where('value_text', 'like', "%{$metadataValue}%"),
-                    default => $mq->where('value_string', (string) $metadataValue),
+                    default => $mq->where('value_string', 'like', "%{$metadataValue}%"),
                 };
             }
         });

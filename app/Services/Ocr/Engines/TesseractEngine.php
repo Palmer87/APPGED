@@ -39,12 +39,15 @@ class TesseractEngine implements OcrEngineInterface
 
         $extension = strtolower(ltrim($extension, '.'));
 
-        // For PDF: check if native text is present to avoid heavy OCR
+        // For PDF: Leptonica/Tesseract on Windows does not have built-in PDF rasterization without Poppler/pdftoppm.
+        // We extract embedded text directly from the PDF streams.
         if ($extension === 'pdf') {
             $nativeText = $this->extractNativePdfText($filePath);
-            if (! empty(trim($nativeText)) && mb_strlen(trim($nativeText)) >= 20) {
-                return trim($nativeText);
+            if (! empty(trim($nativeText))) {
+                return $this->cleanExtractedText($nativeText);
             }
+
+            return '[PDF numérisé — Extraction OCR directe non supportée par cette version de Tesseract sur l\'environnement hôte]';
         }
 
         if (! $this->isAvailable()) {
@@ -68,6 +71,7 @@ class TesseractEngine implements OcrEngineInterface
 
         if (! $result->successful()) {
             $error = $result->errorOutput() ?: $result->output();
+
             throw new RuntimeException("Échec de l'extraction OCR Tesseract : {$error}");
         }
 
@@ -91,14 +95,15 @@ class TesseractEngine implements OcrEngineInterface
                 }
             }
 
-            // Fallback native PHP stream inspection for plain text PDF objects
+            // Fallback native PHP stream inspection for plain text & FlateDecode PDF objects
             $content = file_get_contents($filePath);
             if ($content === false) {
                 return '';
             }
 
-            // Simple text extraction from uncompressed stream blocks in PDF
             $extracted = '';
+
+            // 1. Text extraction from plain uncompressed stream blocks in PDF
             if (preg_match_all('/\(([^\)]+)\)\s*Tj/i', $content, $matches)) {
                 $extracted .= implode(' ', $matches[1])."\n";
             }
@@ -106,6 +111,28 @@ class TesseractEngine implements OcrEngineInterface
                 foreach ($matches[1] as $tj) {
                     if (preg_match_all('/\(([^\)]+)\)/i', $tj, $parts)) {
                         $extracted .= implode('', $parts[1]).' ';
+                    }
+                }
+            }
+
+            // 2. Text extraction from compressed FlateDecode streams
+            if (preg_match_all('/stream[\r\n]+(.*?)[\r\n]+endstream/s', $content, $streamMatches)) {
+                foreach ($streamMatches[1] as $streamData) {
+                    $uncompressed = @gzuncompress($streamData);
+                    if ($uncompressed === false) {
+                        $uncompressed = @gzinflate($streamData);
+                    }
+                    if ($uncompressed !== false && ! empty($uncompressed)) {
+                        if (preg_match_all('/\(([^\)]+)\)\s*Tj/i', $uncompressed, $matches)) {
+                            $extracted .= implode(' ', $matches[1])."\n";
+                        }
+                        if (preg_match_all('/\[([^\]]+)\]\s*TJ/i', $uncompressed, $matches)) {
+                            foreach ($matches[1] as $tj) {
+                                if (preg_match_all('/\(([^\)]+)\)/i', $tj, $parts)) {
+                                    $extracted .= implode('', $parts[1]).' ';
+                                }
+                            }
+                        }
                     }
                 }
             }

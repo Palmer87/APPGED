@@ -523,4 +523,64 @@ class DocumentShareTest extends TestCase
 
         $response->assertForbidden();
     }
+
+    public function test_inertia_user_share_redirects_back_with_flash_message(): void
+    {
+        $response = $this->actingAs($this->managerA)
+            ->withHeader('X-Inertia', 'true')
+            ->from("/documents/{$this->documentA->id}")
+            ->post(route('documents.shares.user.store', $this->documentA), [
+                'user_id' => $this->userA1->id,
+                'permission' => 'view',
+            ]);
+
+        $response->assertRedirect("/documents/{$this->documentA->id}");
+        $response->assertSessionHas('success');
+    }
+
+    public function test_inertia_share_with_target_id_maps_to_user_id(): void
+    {
+        $response = $this->actingAs($this->managerA)
+            ->withHeader('X-Inertia', 'true')
+            ->from("/documents/{$this->documentA->id}")
+            ->post(route('documents.shares.user.store', $this->documentA), [
+                'target_id' => $this->userA1->id,
+                'permission' => 'download',
+            ]);
+
+        $response->assertRedirect("/documents/{$this->documentA->id}");
+        $response->assertSessionHas('success');
+        $this->assertDatabaseHas('document_shares', [
+            'document_id' => $this->documentA->id,
+            'user_id' => $this->userA1->id,
+            'permission' => 'download',
+        ]);
+    }
+
+    public function test_inertia_group_share_redirects_back_with_flash_message(): void
+    {
+        $response = $this->actingAs($this->managerA)
+            ->withHeader('X-Inertia', 'true')
+            ->from("/documents/{$this->documentA->id}")
+            ->post(route('documents.shares.group.store', $this->documentA), [
+                'group_id' => $this->groupA->id,
+                'permission' => 'view',
+            ]);
+
+        $response->assertRedirect("/documents/{$this->documentA->id}");
+        $response->assertSessionHas('success');
+    }
+
+    public function test_inertia_destroy_share_redirects_back_with_flash_message(): void
+    {
+        $share = $this->shareService->shareWithUser($this->managerA, $this->documentA, $this->userA1, 'view');
+
+        $response = $this->actingAs($this->managerA)
+            ->withHeader('X-Inertia', 'true')
+            ->from("/documents/{$this->documentA->id}")
+            ->delete(route('documents.shares.destroy', [$this->documentA, $share]));
+
+        $response->assertRedirect("/documents/{$this->documentA->id}");
+        $response->assertSessionHas('success');
+    }
 }

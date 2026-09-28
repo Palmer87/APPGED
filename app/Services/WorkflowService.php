@@ -36,11 +36,34 @@ class WorkflowService
     {
         Gate::forUser($actor)->authorize('create', Workflow::class);
 
+        $steps = $data['steps'] ?? [];
+        unset($data['steps']);
+
         $data['organization_id'] = $actor->organization_id;
         $data['created_by'] = $actor->id;
         $data['is_active'] = $data['is_active'] ?? true;
 
         $workflow = Workflow::create($data);
+
+        if (! empty($steps) && is_array($steps)) {
+            foreach ($steps as $index => $stepData) {
+                if (empty($stepData['name'])) {
+                    continue;
+                }
+                $stepData['position'] = $stepData['position'] ?? ($index + 1);
+                $stepData['is_required'] = $stepData['is_required'] ?? true;
+                if (! empty($stepData['approver_id'])) {
+                    $type = $stepData['approver_type'] ?? null;
+                    if ($type === 'user' || $type === WorkflowApproverType::User) {
+                        $stepData['approver_user_id'] = $stepData['approver_user_id'] ?? $stepData['approver_id'];
+                    } elseif ($type === 'group' || $type === WorkflowApproverType::Group) {
+                        $stepData['approver_group_id'] = $stepData['approver_group_id'] ?? $stepData['approver_id'];
+                    }
+                    unset($stepData['approver_id']);
+                }
+                $this->addStep($actor, $workflow, $stepData);
+            }
+        }
 
         $this->auditService->success(
             action: 'workflow.created',
@@ -113,6 +136,16 @@ class WorkflowService
     public function addStep(User $actor, Workflow $workflow, array $data): WorkflowStep
     {
         Gate::forUser($actor)->authorize('update', $workflow);
+
+        if (! empty($data['approver_id'])) {
+            $type = $data['approver_type'] ?? null;
+            if ($type === 'user' || $type === WorkflowApproverType::User) {
+                $data['approver_user_id'] = $data['approver_user_id'] ?? $data['approver_id'];
+            } elseif ($type === 'group' || $type === WorkflowApproverType::Group) {
+                $data['approver_group_id'] = $data['approver_group_id'] ?? $data['approver_id'];
+            }
+            unset($data['approver_id']);
+        }
 
         $this->validateStepApproverAndPosition($workflow, $data);
 

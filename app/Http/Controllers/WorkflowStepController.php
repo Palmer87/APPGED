@@ -9,6 +9,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowStep;
 use App\Services\WorkflowService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
 class WorkflowStepController extends Controller
@@ -20,9 +21,13 @@ class WorkflowStepController extends Controller
     /**
      * Add a step to a workflow.
      */
-    public function store(StoreWorkflowStepRequest $request, Workflow $workflow): JsonResponse
+    public function store(StoreWorkflowStepRequest $request, Workflow $workflow): JsonResponse|RedirectResponse
     {
         $step = $this->workflowService->addStep($request->user(), $workflow, $request->validated());
+
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', 'Étape ajoutée avec succès.');
+        }
 
         return response()->json($step, 201);
     }
@@ -30,9 +35,13 @@ class WorkflowStepController extends Controller
     /**
      * Update an existing step.
      */
-    public function update(UpdateWorkflowStepRequest $request, WorkflowStep $step): JsonResponse
+    public function update(UpdateWorkflowStepRequest $request, WorkflowStep $step): JsonResponse|RedirectResponse
     {
         $updated = $this->workflowService->updateStep($request->user(), $step, $request->validated());
+
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', 'Étape mise à jour avec succès.');
+        }
 
         return response()->json($updated);
     }
@@ -40,9 +49,13 @@ class WorkflowStepController extends Controller
     /**
      * Remove a step from a workflow.
      */
-    public function destroy(Request $request, WorkflowStep $step): JsonResponse
+    public function destroy(Request $request, WorkflowStep $step): JsonResponse|RedirectResponse
     {
         $this->workflowService->removeStep($request->user(), $step);
+
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', 'Étape supprimée avec succès.');
+        }
 
         return response()->json(['message' => 'Step removed successfully.']);
     }
@@ -50,9 +63,13 @@ class WorkflowStepController extends Controller
     /**
      * Reorder steps in a workflow.
      */
-    public function reorder(ReorderWorkflowStepsRequest $request, Workflow $workflow): JsonResponse
+    public function reorder(ReorderWorkflowStepsRequest $request, Workflow $workflow): JsonResponse|RedirectResponse
     {
         $this->workflowService->reorderSteps($request->user(), $workflow, $request->validated('positions'));
+
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', 'Étapes réorganisées avec succès.');
+        }
 
         return response()->json(['message' => 'Steps reordered successfully.']);
     }

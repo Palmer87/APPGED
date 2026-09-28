@@ -62,7 +62,7 @@ class WorkflowController extends Controller
 
         $workflow = $this->workflowService->createWorkflow($user, $validated);
 
-        if (! empty($validated['steps'])) {
+        if (! empty($validated['steps']) && $workflow->steps()->count() === 0) {
             foreach ($validated['steps'] as $position => $stepData) {
                 $stepData['position'] = $position + 1;
                 if (! empty($stepData['approver_id'])) {

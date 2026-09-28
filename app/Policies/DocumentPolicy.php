@@ -105,6 +105,10 @@ class DocumentPolicy
             return false;
         }
 
+        if ($document->created_by === $user->id) {
+            return true;
+        }
+
         return $user->can('documents.share');
     }
 

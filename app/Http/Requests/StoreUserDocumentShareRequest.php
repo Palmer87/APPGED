@@ -15,6 +15,13 @@ class StoreUserDocumentShareRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('user_id') && $this->has('target_id')) {
+            $this->merge(['user_id' => $this->input('target_id')]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

@@ -56,6 +56,14 @@ class WorkflowInstance extends Model
         return $this->hasMany(WorkflowAction::class);
     }
 
+    /**
+     * Backward-compatible alias for actions.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->actions();
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->whereIn('status', [

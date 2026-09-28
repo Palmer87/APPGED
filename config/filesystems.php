@@ -72,13 +72,16 @@ return [
             'key' => env('AWS_ACCESS_KEY_ID'),
             'secret' => env('AWS_SECRET_ACCESS_KEY'),
             'region' => env('AWS_DEFAULT_REGION', 'auto'),
-            'bucket' => env('AWS_BUCKET', 'djudevstorage'),
+            'bucket' => env('AWS_BUCKET', 'ged'),
             'url' => env('AWS_URL'),
             'endpoint' => env('AWS_ENDPOINT'),
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'visibility' => 'private',
-            'throw' => false,
+            'throw' => true,
             'report' => false,
+            'http' => [
+                'verify' => env('AWS_CA_BUNDLE', file_exists(storage_path('certs/cacert.pem')) ? storage_path('certs/cacert.pem') : true),
+            ],
         ],
 
         'r2' => [
@@ -86,13 +89,16 @@ return [
             'key' => env('R2_ACCESS_KEY_ID', env('AWS_ACCESS_KEY_ID')),
             'secret' => env('R2_SECRET_ACCESS_KEY', env('AWS_SECRET_ACCESS_KEY')),
             'region' => env('R2_DEFAULT_REGION', env('AWS_DEFAULT_REGION', 'auto')),
-            'bucket' => env('R2_BUCKET', env('AWS_BUCKET', 'djudevstorage')),
+            'bucket' => env('R2_BUCKET', env('AWS_BUCKET', 'ged')),
             'url' => env('R2_URL', env('AWS_URL')),
             'endpoint' => env('R2_ENDPOINT', env('AWS_ENDPOINT')),
             'use_path_style_endpoint' => env('R2_USE_PATH_STYLE_ENDPOINT', env('AWS_USE_PATH_STYLE_ENDPOINT', false)),
             'visibility' => 'private',
-            'throw' => false,
+            'throw' => true,
             'report' => false,
+            'http' => [
+                'verify' => env('AWS_CA_BUNDLE', file_exists(storage_path('certs/cacert.pem')) ? storage_path('certs/cacert.pem') : true),
+            ],
         ],
 
     ],

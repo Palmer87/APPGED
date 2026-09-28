@@ -27,10 +27,11 @@ use App\Http\Controllers\WorkflowController;
 use App\Http\Controllers\WorkflowInstanceController;
 use App\Http\Controllers\WorkflowStepController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/', function () {
-    return view('welcome');
-});
+    return Inertia::render('Welcome');
+})->name('home');
 
 Route::get('/login', [AuthWebController::class, 'create'])->name('login');
 Route::post('/login', [AuthWebController::class, 'store'])->name('login.store');
@@ -51,8 +52,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Documents Web
     Route::get('/documents', [DocumentWebController::class, 'index'])->name('documents.index');
+    Route::get('/documents/create', [DocumentWebController::class, 'create'])->name('documents.create');
     Route::post('/documents', [DocumentWebController::class, 'store'])->name('documents.store');
     Route::get('/documents/{document}', [DocumentWebController::class, 'show'])->name('documents.show');
+    Route::get('/documents/{document}/edit', [DocumentWebController::class, 'edit'])->name('documents.edit');
+    Route::put('/documents/{document}', [DocumentWebController::class, 'update'])->name('documents.update');
     Route::post('/documents/{document}/move', [DocumentWebController::class, 'move'])->name('documents.move');
     Route::get('/documents/{document}/download', [DocumentWebController::class, 'download'])->name('documents.download');
     Route::post('/documents/{document}/versions', [DocumentWebController::class, 'storeVersion'])->name('documents.versions.store');

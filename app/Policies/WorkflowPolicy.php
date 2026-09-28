@@ -4,14 +4,28 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\Workflow;
+use Spatie\Permission\PermissionRegistrar;
 
 class WorkflowPolicy
 {
+    protected function ensureTeamContext(User $user): void
+    {
+        if ($user->organization_id) {
+            app(PermissionRegistrar::class)->setPermissionsTeamId($user->organization_id);
+        }
+    }
+
     /**
      * Determine whether the user can view any workflows.
      */
     public function viewAny(User $user): bool
     {
+        $this->ensureTeamContext($user);
+
+        if ($user->hasRole(['admin', 'super-admin', 'manager'])) {
+            return true;
+        }
+
         return $user->can('workflows.view');
     }
 
@@ -24,6 +38,12 @@ class WorkflowPolicy
             return false;
         }
 
+        $this->ensureTeamContext($user);
+
+        if ($user->hasRole(['admin', 'super-admin', 'manager'])) {
+            return true;
+        }
+
         return $user->can('workflows.view');
     }
 
@@ -32,6 +52,12 @@ class WorkflowPolicy
      */
     public function create(User $user): bool
     {
+        $this->ensureTeamContext($user);
+
+        if ($user->hasRole(['admin', 'super-admin', 'manager'])) {
+            return true;
+        }
+
         return $user->can('workflows.create');
     }
 
@@ -42,6 +68,12 @@ class WorkflowPolicy
     {
         if ($user->organization_id !== $workflow->organization_id) {
             return false;
+        }
+
+        $this->ensureTeamContext($user);
+
+        if ($user->hasRole(['admin', 'super-admin', 'manager'])) {
+            return true;
         }
 
         return $user->can('workflows.update');
@@ -56,6 +88,12 @@ class WorkflowPolicy
             return false;
         }
 
+        $this->ensureTeamContext($user);
+
+        if ($user->hasRole(['admin', 'super-admin', 'manager'])) {
+            return true;
+        }
+
         return $user->can('workflows.delete');
     }
 
@@ -66,6 +104,12 @@ class WorkflowPolicy
     {
         if ($user->organization_id !== $workflow->organization_id) {
             return false;
+        }
+
+        $this->ensureTeamContext($user);
+
+        if ($user->hasRole(['admin', 'super-admin', 'manager'])) {
+            return true;
         }
 
         return $user->can('workflows.execute');

@@ -26,6 +26,10 @@ class DocumentMetadata extends Model
 
     protected $table = 'document_metadata';
 
+    protected $appends = [
+        'value',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -35,6 +39,11 @@ class DocumentMetadata extends Model
             'value_date' => 'date:Y-m-d',
             'value_datetime' => 'datetime:Y-m-d H:i:s',
         ];
+    }
+
+    public function getValueAttribute(): mixed
+    {
+        return $this->getTypedValue();
     }
 
     public function document(): BelongsTo
@@ -53,6 +62,8 @@ class DocumentMetadata extends Model
     public function getTypedValue(): mixed
     {
         $type = $this->definition?->type;
+        $rawDate = $this->value_date instanceof \DateTimeInterface ? $this->value_date->format('Y-m-d') : $this->value_date;
+        $rawDateTime = $this->value_datetime instanceof \DateTimeInterface ? $this->value_datetime->format('Y-m-d H:i:s') : $this->value_datetime;
 
         return match ($type) {
             'string' => $this->value_string,
@@ -60,15 +71,15 @@ class DocumentMetadata extends Model
             'integer' => $this->value_integer !== null ? (int) $this->value_integer : null,
             'decimal' => $this->value_decimal !== null ? (float) $this->value_decimal : null,
             'boolean' => $this->value_boolean !== null ? (bool) $this->value_boolean : null,
-            'date' => $this->value_date instanceof \DateTimeInterface ? $this->value_date->format('Y-m-d') : $this->value_date,
-            'datetime' => $this->value_datetime instanceof \DateTimeInterface ? $this->value_datetime->format('Y-m-d H:i:s') : $this->value_datetime,
+            'date' => $rawDate,
+            'datetime' => $rawDateTime,
             default => $this->value_string
                 ?? $this->value_text
                 ?? $this->value_integer
                 ?? $this->value_decimal
                 ?? $this->value_boolean
-                ?? $this->value_date
-                ?? $this->value_datetime,
+                ?? $rawDate
+                ?? $rawDateTime,
         };
     }
 }

@@ -15,6 +15,13 @@ class StoreGroupDocumentShareRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (! $this->has('group_id') && $this->has('target_id')) {
+            $this->merge(['group_id' => $this->input('target_id')]);
+        }
+    }
+
     /**
      * Get the validation rules that apply to the request.
      *

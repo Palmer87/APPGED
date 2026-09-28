@@ -26,7 +26,10 @@ import {
     Search,
     ChevronRight,
     FileText,
-    Plus
+    Plus,
+    Edit2,
+    FilePlus2,
+    Share2
 } from 'lucide-react';
 
 export default function DocumentsIndex({
@@ -151,14 +154,16 @@ export default function DocumentsIndex({
                     </div>
 
                     <div className="flex items-center gap-2.5">
-                        <Button
-                            variant="primary"
-                            size="md"
-                            onClick={() => setUploadModalOpen(true)}
-                        >
-                            <Upload className="w-4 h-4" />
-                            Téléverser un document
-                        </Button>
+                        <Link href="/documents/create">
+                            <Button
+                                variant="primary"
+                                size="md"
+                                className="font-bold shadow-xs"
+                            >
+                                <FilePlus2 className="w-4 h-4 mr-1.5" />
+                                Importer un document
+                            </Button>
+                        </Link>
                     </div>
                 </div>
 
@@ -313,6 +318,20 @@ export default function DocumentsIndex({
                                                     title="Ouvrir le document"
                                                 >
                                                     <Eye className="w-4 h-4" />
+                                                </Link>
+                                                <Link
+                                                    href={`/documents/${doc.id}/edit`}
+                                                    className="p-1 text-slate-400 hover:text-indigo-600 transition"
+                                                    title="Modifier"
+                                                >
+                                                    <Edit2 className="w-4 h-4" />
+                                                </Link>
+                                                <Link
+                                                    href={`/documents/${doc.id}?tab=shares`}
+                                                    className="p-1 text-slate-400 hover:text-blue-600 transition"
+                                                    title="Partager le document"
+                                                >
+                                                    <Share2 className="w-4 h-4" />
                                                 </Link>
                                                 <a
                                                     href={`/documents/${doc.id}/download`}

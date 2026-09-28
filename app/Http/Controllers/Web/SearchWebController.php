@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Enums\FolderType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Folder;
@@ -18,17 +19,62 @@ class SearchWebController extends Controller
     ) {}
 
     /**
-     * Search documents with criteria.
+     * Search documents with business criteria.
      */
     public function index(Request $request): Response
     {
         $user = $request->user();
         $filters = $request->all();
 
+        $hasFilters = ! empty($filters['q'])
+            || ! empty($filters['department_id'])
+            || ! empty($filters['document_type_id'])
+            || ! empty($filters['folder_id'])
+            || ! empty($filters['category_id'])
+            || ! empty($filters['tag_id'])
+            || ! empty($filters['extension'])
+            || ! empty($filters['status'])
+            || ! empty($filters['created_from'])
+            || ! empty($filters['created_to'])
+            || (! empty($filters['metadata']) && array_filter((array) $filters['metadata']));
+
         $results = null;
-        if (! empty($filters['q']) || ! empty($filters['folder_id']) || ! empty($filters['category_id']) || ! empty($filters['tag_id']) || ! empty($filters['extension']) || ! empty($filters['status'])) {
+        if ($hasFilters) {
             $results = $this->searchService->search($user, $filters);
+            $results->loadMissing(['documentType.parent', 'creator', 'currentVersion']);
         }
+
+        $departments = Folder::query()
+            ->where('organization_id', $user->organization_id)
+            ->where('folder_type', FolderType::Department)
+            ->where('is_active', true)
+            ->with([
+                'children' => fn ($q) => $q->where('folder_type', FolderType::DocumentType)
+                    ->where('is_active', true)
+                    ->with(['metadataDefinitions' => fn ($mq) => $mq->where('is_active', true)])
+                    ->orderBy('name'),
+            ])
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($dept) => [
+                'id' => $dept->id,
+                'name' => $dept->name,
+                'document_types' => $dept->children->map(fn ($type) => [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                    'description' => $type->description,
+                    'parent_id' => $type->parent_id,
+                    'metadata_definitions' => $type->metadataDefinitions->map(fn ($def) => [
+                        'id' => $def->id,
+                        'name' => $def->name,
+                        'key' => $def->key,
+                        'type' => $def->type,
+                        'is_required' => $def->pivot->is_required !== null ? (bool) $def->pivot->is_required : (bool) $def->is_required,
+                        'order' => (int) $def->pivot->order,
+                        'description' => $def->description,
+                    ]),
+                ])->values(),
+            ])->values();
 
         $folders = Folder::where('organization_id', $user->organization_id)
             ->orderBy('name')
@@ -45,6 +91,7 @@ class SearchWebController extends Controller
         return Inertia::render('Search/Index', [
             'results' => $results,
             'filters' => $filters,
+            'departments' => $departments,
             'folders' => $folders,
             'categories' => $categories,
             'tags' => $tags,

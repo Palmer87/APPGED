@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class WorkflowInstanceController extends Controller
 {
@@ -66,9 +67,20 @@ class WorkflowInstanceController extends Controller
     /**
      * Start a workflow for a document.
      */
-    public function start(Request $request, Document $document, Workflow $workflow): JsonResponse
+    public function start(Request $request, Document $document, Workflow $workflow): JsonResponse|RedirectResponse
     {
-        $instance = $this->workflowService->start($request->user(), $document, $workflow);
+        try {
+            $instance = $this->workflowService->start($request->user(), $document, $workflow);
+        } catch (HttpException $e) {
+            if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+                return back()->with('error', $e->getMessage());
+            }
+            throw $e;
+        }
+
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+            return back()->with('success', "Circuit de validation '{$workflow->name}' démarré pour ce document.");
+        }
 
         return response()->json($instance, 201);
     }
@@ -78,9 +90,16 @@ class WorkflowInstanceController extends Controller
      */
     public function approve(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
-        $action = $this->workflowService->approve($request->user(), $instance, $request->validated('comment'));
+        try {
+            $action = $this->workflowService->approve($request->user(), $instance, $request->validated('comment'));
+        } catch (HttpException $e) {
+            if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+                return back()->with('error', $e->getMessage());
+            }
+            throw $e;
+        }
 
-        if ($request->header('X-Inertia')) {
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
             return back()->with('success', 'Étape approuvée avec succès.');
         }
 
@@ -95,9 +114,16 @@ class WorkflowInstanceController extends Controller
      */
     public function reject(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
-        $action = $this->workflowService->reject($request->user(), $instance, $request->validated('comment'));
+        try {
+            $action = $this->workflowService->reject($request->user(), $instance, $request->validated('comment'));
+        } catch (HttpException $e) {
+            if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+                return back()->with('error', $e->getMessage());
+            }
+            throw $e;
+        }
 
-        if ($request->header('X-Inertia')) {
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
             return back()->with('success', 'Workflow rejeté.');
         }
 
@@ -112,9 +138,16 @@ class WorkflowInstanceController extends Controller
      */
     public function requestCorrection(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
-        $action = $this->workflowService->requestCorrection($request->user(), $instance, $request->validated('comment'));
+        try {
+            $action = $this->workflowService->requestCorrection($request->user(), $instance, $request->validated('comment'));
+        } catch (HttpException $e) {
+            if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+                return back()->with('error', $e->getMessage());
+            }
+            throw $e;
+        }
 
-        if ($request->header('X-Inertia')) {
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
             return back()->with('success', 'Demande de correction transmise.');
         }
 
@@ -129,9 +162,16 @@ class WorkflowInstanceController extends Controller
      */
     public function resubmit(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
-        $action = $this->workflowService->resubmit($request->user(), $instance, $request->validated('comment'));
+        try {
+            $action = $this->workflowService->resubmit($request->user(), $instance, $request->validated('comment'));
+        } catch (HttpException $e) {
+            if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+                return back()->with('error', $e->getMessage());
+            }
+            throw $e;
+        }
 
-        if ($request->header('X-Inertia')) {
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
             return back()->with('success', 'Workflow soumis à nouveau.');
         }
 
@@ -146,9 +186,16 @@ class WorkflowInstanceController extends Controller
      */
     public function cancel(WorkflowActionRequest $request, WorkflowInstance $instance): JsonResponse|RedirectResponse
     {
-        $action = $this->workflowService->cancel($request->user(), $instance, $request->validated('comment'));
+        try {
+            $action = $this->workflowService->cancel($request->user(), $instance, $request->validated('comment'));
+        } catch (HttpException $e) {
+            if ($request->header('X-Inertia') || ! $request->wantsJson()) {
+                return back()->with('error', $e->getMessage());
+            }
+            throw $e;
+        }
 
-        if ($request->header('X-Inertia')) {
+        if ($request->header('X-Inertia') || ! $request->wantsJson()) {
             return back()->with('success', 'Workflow annulé.');
         }
 

@@ -34,6 +34,8 @@ class SearchRequest extends FormRequest
             'tag_ids.*' => ['integer'],
             'metadata_key' => ['nullable', 'string', 'regex:/^[a-z][a-z0-9_]*$/'],
             'metadata_value' => ['nullable'],
+            'metadata' => ['nullable', 'array'],
+            'metadata.*' => ['nullable'],
             'created_from' => ['nullable', 'date'],
             'created_to' => ['nullable', 'date'],
             'updated_from' => ['nullable', 'date'],

@@ -19,6 +19,7 @@ use App\Services\AccessControlService;
 use App\Services\AuditService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Inertia\Testing\AssertableInertia;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
@@ -162,8 +163,11 @@ class DashboardTest extends TestCase
         $response = $this->actingAs($this->userA)->get('/dashboard');
 
         $response->assertOk();
-        $response->assertSee('Bonjour, Alice');
-        $response->assertSee('Organisation A');
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->component('Dashboard/Index')
+            ->where('user.first_name', 'Alice')
+            ->where('organization.name', 'Organisation A')
+        );
     }
 
     /*
@@ -209,16 +213,21 @@ class DashboardTest extends TestCase
 
     public function test_documents_restricted_by_acl_are_not_counted_for_user_without_access(): void
     {
+        $restrictedUser = User::factory()->create(['organization_id' => $this->orgA->id]);
+        $memberRole = Role::findOrCreate('member', 'web');
+        $memberRole->syncPermissions(['documents.view', 'folders.view']);
+        $restrictedUser->assignRole($memberRole);
+
         $otherUser = User::factory()->create(['organization_id' => $this->orgA->id]);
 
-        // Doc 1: accessible to userA
-        $this->createAccessibleDocument($this->userA);
+        // Doc 1: accessible to restrictedUser
+        $this->createAccessibleDocument($restrictedUser);
 
         // Doc 2: restricted with an ACL only to $otherUser
         $this->createAccessibleDocument($otherUser);
 
-        // User A should only see 1 document because Doc 2 has an ACL excluding User A
-        $response = $this->actingAs($this->userA)->getJson('/dashboard');
+        // restrictedUser should only see 1 document because Doc 2 has an ACL excluding restrictedUser
+        $response = $this->actingAs($restrictedUser)->getJson('/dashboard');
         $response->assertOk();
         $this->assertSame(1, $response->json('statistics.documents_count'));
     }
