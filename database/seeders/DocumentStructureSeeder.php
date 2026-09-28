@@ -8,6 +8,7 @@ use App\Models\MetadataDefinition;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DocumentStructureSeeder extends Seeder
 {
@@ -20,6 +21,18 @@ class DocumentStructureSeeder extends Seeder
 
         foreach ($organizations as $org) {
             $user = User::where('organization_id', $org->id)->first() ?? User::first();
+            if (! $user) {
+                $user = User::firstOrCreate(
+                    ['email' => 'admin@'.($org->slug ?? 'ged-demo').'.test'],
+                    [
+                        'organization_id' => $org->id,
+                        'first_name' => 'GED',
+                        'last_name' => 'Administrator',
+                        'password' => Hash::make('password'),
+                        'status' => 'active',
+                    ]
+                );
+            }
             // 1. Assurer les métadonnées requises
             $defs = [
                 'client' => MetadataDefinition::firstOrCreate(
