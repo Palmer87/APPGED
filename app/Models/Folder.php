@@ -20,6 +20,8 @@ class Folder extends Model
      */
     protected $fillable = [
         'organization_id',
+        'direction_id',
+        'service_id',
         'parent_id',
         'folder_type',
         'name',
@@ -45,6 +47,16 @@ class Folder extends Model
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function direction(): BelongsTo
+    {
+        return $this->belongsTo(Direction::class);
+    }
+
+    public function service(): BelongsTo
+    {
+        return $this->belongsTo(Service::class);
     }
 
     /**
@@ -124,6 +136,14 @@ class Folder extends Model
     }
 
     /**
+     * Determine if folder is a service.
+     */
+    public function isService(): bool
+    {
+        return $this->folder_type === FolderType::Service;
+    }
+
+    /**
      * Determine if folder is a document type.
      */
     public function isDocumentType(): bool
@@ -151,6 +171,26 @@ class Folder extends Model
         $cursor = $this->parent;
         while ($cursor) {
             if ($cursor->isDocumentType()) {
+                return $cursor;
+            }
+            $cursor = $cursor->parent;
+        }
+
+        return null;
+    }
+
+    /**
+     * Find nearest Service in hierarchy (self or ancestor).
+     */
+    public function getService(): ?self
+    {
+        if ($this->isService()) {
+            return $this;
+        }
+
+        $cursor = $this->parent;
+        while ($cursor) {
+            if ($cursor->isService()) {
                 return $cursor;
             }
             $cursor = $cursor->parent;
@@ -188,11 +228,24 @@ class Folder extends Model
     }
 
     /**
+     * Find root Direction in hierarchy (alias for getDepartment).
+     */
+    public function getDirection(): ?self
+    {
+        return $this->getDepartment();
+    }
+
+    /**
      * Scopes
      */
     public function scopeDepartments(Builder $query): Builder
     {
         return $query->where('folder_type', FolderType::Department);
+    }
+
+    public function scopeServices(Builder $query): Builder
+    {
+        return $query->where('folder_type', FolderType::Service);
     }
 
     public function scopeDocumentTypes(Builder $query): Builder

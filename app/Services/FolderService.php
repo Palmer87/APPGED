@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\FolderType;
+use App\Models\Direction;
 use App\Models\Document;
 use App\Models\Folder;
 use App\Models\Organization;
@@ -83,7 +84,23 @@ class FolderService
         $data['folder_type'] = FolderType::Department;
         $data['parent_id'] = null;
 
-        return $this->create($data, $user);
+        $folder = $this->create($data, $user);
+
+        // Ensure Direction model exists for V2 structure
+        $direction = Direction::firstOrCreate(
+            ['folder_id' => $folder->id],
+            [
+                'organization_id' => $user->organization_id,
+                'name' => $folder->name,
+                'description' => $folder->description,
+                'is_active' => $folder->is_active ?? true,
+            ]
+        );
+        if ($folder->direction_id !== $direction->id) {
+            $folder->update(['direction_id' => $direction->id]);
+        }
+
+        return $folder;
     }
 
     /**
@@ -131,6 +148,14 @@ class FolderService
 
         $folder->save();
         $this->updatePath($folder);
+
+        if ($folder->folder_type === FolderType::Department && $folder->direction_id) {
+            Direction::where('id', $folder->direction_id)->update([
+                'name' => $folder->name,
+                'description' => $folder->description,
+                'is_active' => $folder->is_active,
+            ]);
+        }
 
         $action = match ($folder->folder_type) {
             FolderType::Department => 'direction.updated',
@@ -272,6 +297,10 @@ class FolderService
             FolderType::DocumentType => 'document_type.deleted',
             default => 'folder.deleted',
         };
+
+        if ($folder->folder_type === FolderType::Department && $folder->direction_id) {
+            Direction::where('id', $folder->direction_id)->delete();
+        }
 
         $folder->delete();
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AccessScopeType;
 use App\Models\Document;
 use App\Models\DocumentPermission;
 use App\Models\DocumentShare;
@@ -17,9 +18,11 @@ use Illuminate\Support\Facades\DB;
 class AccessControlService
 {
     public function __construct(
-        protected ?AuditService $auditService = null
+        protected ?AuditService $auditService = null,
+        protected ?AccessScopeService $scopeService = null
     ) {
         $this->auditService = $this->auditService ?? app(AuditService::class);
+        $this->scopeService = $this->scopeService ?? app(AccessScopeService::class);
     }
 
     /**
@@ -353,6 +356,11 @@ class AccessControlService
             }
         }
 
+        // 6. Access Scope (Périmètre d'accès)
+        if ($this->scopeService->hasScopeAccess($user, $folder)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -438,6 +446,11 @@ class AccessControlService
                     return true;
                 }
             }
+        }
+
+        // 8. Access Scope (Périmètre d'accès)
+        if (in_array($perm, ['view', 'download'], true) && $this->scopeService->hasScopeAccess($user, $document)) {
+            return true;
         }
 
         return false;
@@ -581,6 +594,33 @@ class AccessControlService
                                 ->orWhere('document_shares.expires_at', '>', Carbon::now());
                         });
                 });
+            }
+
+            // 6. User Access Scopes (Périmètre d'accès)
+            $userScopes = $this->scopeService->getUserScopes($user);
+            if ($userScopes->isNotEmpty()) {
+                if ($userScopes->contains('scope_type', AccessScopeType::Organization)) {
+                    $sub->orWhereNotNull('documents.id');
+                } else {
+                    $directionIds = $userScopes->where('scope_type', AccessScopeType::Direction)->pluck('direction_id')->filter()->all();
+                    $serviceIds = $userScopes->where('scope_type', AccessScopeType::Service)->pluck('service_id')->filter()->all();
+                    $folderIds = $userScopes->whereIn('scope_type', [AccessScopeType::Folder, AccessScopeType::DocumentType])->pluck('folder_id')->filter()->all();
+                    $docIds = $userScopes->where('scope_type', AccessScopeType::Document)->pluck('document_id')->filter()->all();
+
+                    if (! empty($directionIds)) {
+                        $sub->orWhereIn('documents.direction_id', $directionIds);
+                    }
+                    if (! empty($serviceIds)) {
+                        $sub->orWhereIn('documents.service_id', $serviceIds);
+                    }
+                    if (! empty($folderIds)) {
+                        $sub->orWhereIn('documents.folder_id', $folderIds)
+                            ->orWhereIn('documents.document_type_id', $folderIds);
+                    }
+                    if (! empty($docIds)) {
+                        $sub->orWhereIn('documents.id', $docIds);
+                    }
+                }
             }
         });
     }

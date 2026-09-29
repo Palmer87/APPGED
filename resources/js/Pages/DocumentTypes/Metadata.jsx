@@ -116,13 +116,18 @@ export default function DocumentTypeMetadata({
     };
 
     const autoGenerateKey = (name) => {
-        return name
+        let key = name
             .toLowerCase()
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9_]/g, '_')
             .replace(/^_+|_+$/g, '')
             .replace(/_+/g, '_');
+
+        if (key && !/^[a-z]/.test(key)) {
+            key = `meta_${key}`;
+        }
+        return key;
     };
 
     return (
@@ -266,6 +271,7 @@ export default function DocumentTypeMetadata({
 
             {/* Modal Sélection des métadonnées existantes */}
             <Modal
+                isOpen={attachModalOpen}
                 show={attachModalOpen}
                 onClose={() => setAttachModalOpen(false)}
                 title="Associer des métadonnées"
@@ -328,17 +334,36 @@ export default function DocumentTypeMetadata({
 
             {/* Modal Création rapide d'une métadonnée */}
             <Modal
+                isOpen={newDefModalOpen}
                 show={newDefModalOpen}
-                onClose={() => setNewDefModalOpen(false)}
+                onClose={() => {
+                    setNewDefModalOpen(false);
+                    createDefForm.clearErrors();
+                }}
                 title="Créer une métadonnée"
             >
                 <form onSubmit={handleCreateDef} className="space-y-4">
+                    {Object.keys(createDefForm.errors).length > 0 && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold">Erreur de validation :</p>
+                                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                    {Object.values(createDefForm.errors).map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
                     <Input
                         label="Libellé du champ"
                         value={createDefForm.data.name}
                         onChange={(e) => {
                             const name = e.target.value;
                             createDefForm.setData({
+                                ...createDefForm.data,
                                 name,
                                 key: autoGenerateKey(name),
                             });
@@ -348,14 +373,22 @@ export default function DocumentTypeMetadata({
                         required
                     />
 
-                    <Input
-                        label="Clé technique (snake_case)"
-                        value={createDefForm.data.key}
-                        onChange={(e) => createDefForm.setData('key', e.target.value)}
-                        placeholder="numero_client"
-                        error={createDefForm.errors.key}
-                        required
-                    />
+                    <div>
+                        <Input
+                            label="Clé technique (snake_case)"
+                            value={createDefForm.data.key}
+                            onChange={(e) => {
+                                const clean = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                                createDefForm.setData('key', clean);
+                            }}
+                            placeholder="numero_client"
+                            error={createDefForm.errors.key}
+                            required
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                            Commence par une minuscule, sans accents ni espaces (ex: <code>date_facture</code>).
+                        </p>
+                    </div>
 
                     <div>
                         <label className="block text-xs font-semibold text-slate-700 mb-1">

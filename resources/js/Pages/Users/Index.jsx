@@ -25,11 +25,13 @@ import {
     Calendar
 } from 'lucide-react';
 
-export default function UsersIndex({ users, roles = [], groups = [], filters = {}, can = {}, auth }) {
+export default function UsersIndex({ users, roles = [], groups = [], directions = [], services = [], filters = {}, can = {}, auth }) {
     const [search, setSearch] = useState(filters.search || '');
     const [status, setStatus] = useState(filters.status || '');
     const [role, setRole] = useState(filters.role || '');
     const [groupId, setGroupId] = useState(filters.group_id || '');
+    const [directionId, setDirectionId] = useState(filters.direction_id || '');
+    const [serviceId, setServiceId] = useState(filters.service_id || '');
     const [userToDelete, setUserToDelete] = useState(null);
     const [userToToggle, setUserToToggle] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -41,6 +43,8 @@ export default function UsersIndex({ users, roles = [], groups = [], filters = {
             status: status,
             role: role,
             group_id: groupId,
+            direction_id: directionId,
+            service_id: serviceId,
             ...updatedFilters,
         };
 
@@ -66,10 +70,12 @@ export default function UsersIndex({ users, roles = [], groups = [], filters = {
         setStatus('');
         setRole('');
         setGroupId('');
+        setDirectionId('');
+        setServiceId('');
         router.get('/users', {}, { preserveState: true, replace: true });
     };
 
-    const hasActiveFilters = Boolean(search || status || role || groupId);
+    const hasActiveFilters = Boolean(search || status || role || groupId || directionId || serviceId);
 
     const handleToggleStatus = () => {
         if (!userToToggle) return;
@@ -199,6 +205,48 @@ export default function UsersIndex({ users, roles = [], groups = [], filters = {
                             </select>
                         </div>
 
+                        {/* Direction Filter */}
+                        {directions.length > 0 && (
+                            <div className="w-full md:w-44">
+                                <select
+                                    value={directionId}
+                                    onChange={(e) => {
+                                        setDirectionId(e.target.value);
+                                        handleFilter({ direction_id: e.target.value });
+                                    }}
+                                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white text-slate-700"
+                                >
+                                    <option value="">Toutes directions</option>
+                                    {directions.map((d) => (
+                                        <option key={d.id} value={d.id}>
+                                            {d.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* Service Filter */}
+                        {services.length > 0 && (
+                            <div className="w-full md:w-44">
+                                <select
+                                    value={serviceId}
+                                    onChange={(e) => {
+                                        setServiceId(e.target.value);
+                                        handleFilter({ service_id: e.target.value });
+                                    }}
+                                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 bg-white text-slate-700"
+                                >
+                                    <option value="">Tous services</option>
+                                    {services.map((s) => (
+                                        <option key={s.id} value={s.id}>
+                                            {s.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
                         {/* Search action button */}
                         <Button type="submit" variant="secondary" size="md">
                             <Filter className="w-3.5 h-3.5" />
@@ -230,6 +278,7 @@ export default function UsersIndex({ users, roles = [], groups = [], filters = {
                                     <tr className="border-b border-slate-200/80 bg-slate-50/75 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                                         <th className="py-3.5 px-4">Utilisateur</th>
                                         <th className="py-3.5 px-4">Poste / Rôle</th>
+                                        <th className="py-3.5 px-4">Service & Direction</th>
                                         <th className="py-3.5 px-4">Statut</th>
                                         <th className="py-3.5 px-4">Groupes</th>
                                         <th className="py-3.5 px-4">Dernière connexion</th>
@@ -301,6 +350,24 @@ export default function UsersIndex({ users, roles = [], groups = [], filters = {
                                                             </div>
                                                         )}
                                                     </div>
+                                                </td>
+
+                                                {/* Service & Direction V2 */}
+                                                <td className="py-3.5 px-4">
+                                                    {u.primary_service ? (
+                                                        <div>
+                                                            <span className="font-semibold text-xs text-slate-800">
+                                                                {u.primary_service.name}
+                                                            </span>
+                                                            {u.primary_service.direction && (
+                                                                <span className="text-[10px] text-slate-400 block">
+                                                                    {u.primary_service.direction.name}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-[11px] text-slate-400 italic">Non assigné</span>
+                                                    )}
                                                 </td>
 
                                                 {/* Status */}

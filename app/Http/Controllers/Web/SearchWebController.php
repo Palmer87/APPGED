@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Web;
 use App\Enums\FolderType;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Direction;
 use App\Models\Folder;
+use App\Models\Service;
 use App\Models\Tag;
 use App\Services\SearchService;
 use Illuminate\Http\Request;
@@ -88,10 +90,31 @@ class SearchWebController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $directions = Direction::where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->with(['services' => fn ($q) => $q->where('is_active', true)->orderBy('name')])
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
+        $services = Service::where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'direction_id']);
+
+        $userContext = [
+            'primary_service_id' => $user->primary_service_id,
+            'primary_direction_id' => $user->primaryService?->direction_id,
+            'primary_service_name' => $user->primaryService?->name,
+            'primary_direction_name' => $user->primaryService?->direction?->name,
+        ];
+
         return Inertia::render('Search/Index', [
             'results' => $results,
             'filters' => $filters,
             'departments' => $departments,
+            'directions' => $directions,
+            'services' => $services,
+            'userContext' => $userContext,
             'folders' => $folders,
             'categories' => $categories,
             'tags' => $tags,

@@ -6,6 +6,7 @@ enum FolderType: string
 {
     case Standard = 'standard';
     case Department = 'department';
+    case Service = 'service';
     case DocumentType = 'document_type';
 
     public function label(): string
@@ -13,6 +14,7 @@ enum FolderType: string
         return match ($this) {
             self::Standard => 'Dossier standard',
             self::Department => 'Direction',
+            self::Service => 'Service',
             self::DocumentType => 'Type documentaire',
         };
     }
@@ -25,6 +27,11 @@ enum FolderType: string
     public function isDepartment(): bool
     {
         return $this === self::Department;
+    }
+
+    public function isService(): bool
+    {
+        return $this === self::Service;
     }
 
     public function isDocumentType(): bool

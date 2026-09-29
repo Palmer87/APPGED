@@ -26,7 +26,9 @@ import {
     User as UserIcon,
     LogOut,
     ArrowRight,
-    CreditCard
+    CreditCard,
+    Network,
+    KeyRound
 } from 'lucide-react';
 import Toast from '../Components/Toast';
 
@@ -68,8 +70,10 @@ export default function AuthenticatedLayout({ children, title }) {
     ];
 
     const adminItems = [
-        { name: 'Directions', href: '/departments', icon: Building2, current: isUrl('/departments') },
+        { name: 'Directions', href: '/directions', icon: Building2, current: isUrl('/directions') || isUrl('/departments') || isUrl('/admin/directions') },
+        { name: 'Services', href: '/services', icon: Network, current: isUrl('/services') || isUrl('/admin/services') },
         { name: 'Types documentaires', href: '/document-types', icon: FileStack, current: isUrl('/document-types') },
+        { name: 'Périmètres d\'accès', href: '/access-scopes', icon: KeyRound, current: isUrl('/access-scopes') || isUrl('/admin/access-scopes') },
         { name: 'Utilisateurs', href: '/users', icon: Users, current: isUrl('/users') },
         { name: 'Rôles & permissions', href: '/roles', icon: Shield, current: isUrl('/roles') },
         { name: 'Abonnement', href: '/settings/subscription', icon: CreditCard, current: isUrl('/settings/subscription') },

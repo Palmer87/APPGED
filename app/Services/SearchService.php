@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Http\Requests\SearchRequest;
 use App\Models\Category;
+use App\Models\Direction;
 use App\Models\Document;
 use App\Models\Folder;
 use App\Models\MetadataDefinition;
+use App\Models\Service;
 use App\Models\Tag;
 use App\Models\User;
 use Carbon\Carbon;
@@ -48,9 +50,15 @@ class SearchService
             $this->applyTextSearch($query, trim($validated['q']));
         }
 
-        // 5. Department filter (Direction)
-        if (! empty($validated['department_id'])) {
-            $this->applyDepartmentFilter($query, $user, (int) $validated['department_id']);
+        // 5. Direction / Department filter
+        $dirId = $validated['direction_id'] ?? $validated['department_id'] ?? null;
+        if (! empty($dirId)) {
+            $this->applyDirectionFilter($query, $user, (int) $dirId);
+        }
+
+        // 5b. Service filter
+        if (! empty($validated['service_id'])) {
+            $this->applyServiceFilter($query, $user, (int) $validated['service_id']);
         }
 
         // 6. Document Type filter (Type documentaire)
@@ -166,38 +174,94 @@ class SearchService
     }
 
     /**
-     * Apply department filter (Direction).
+     * Apply direction filter (Direction V2 or Department folder).
      */
-    protected function applyDepartmentFilter(Builder $query, User $user, int $deptId): void
+    protected function applyDirectionFilter(Builder $query, User $user, int $dirId): void
     {
-        $deptQuery = Folder::where('id', $deptId)->whereNull('deleted_at');
+        $direction = Direction::where('id', $dirId);
         if (! $user->hasRole('super-admin')) {
-            $deptQuery->where('organization_id', $user->organization_id);
+            $direction->where('organization_id', $user->organization_id);
         }
-        $deptFolder = $deptQuery->first();
-        if (! $deptFolder) {
+        $dirModel = $direction->first();
+
+        // Also check if dirId was passed as a department folder_id
+        $folderId = $dirModel?->folder_id ?? $dirId;
+        $deptFolder = Folder::where('id', $folderId)->whereNull('deleted_at');
+        if (! $user->hasRole('super-admin')) {
+            $deptFolder->where('organization_id', $user->organization_id);
+        }
+        $deptFolder = $deptFolder->first();
+
+        $descendantIds = [];
+        if ($deptFolder) {
+            $descendantQuery = Folder::where('organization_id', $deptFolder->organization_id)->whereNull('deleted_at');
+            if (! empty($deptFolder->path)) {
+                $descendantQuery->where(function ($q) use ($deptFolder) {
+                    $q->where('path', 'like', $deptFolder->path.'%')
+                        ->orWhere('parent_id', $deptFolder->id);
+                });
+            } else {
+                $descendantQuery->where('parent_id', $deptFolder->id);
+            }
+            $descendantIds = $descendantQuery->pluck('id')->push($deptFolder->id)->all();
+        }
+
+        if (! $dirModel && ! $deptFolder) {
             $query->whereRaw('1 = 0');
 
             return;
         }
 
-        $descendantQuery = Folder::where('organization_id', $deptFolder->organization_id)->whereNull('deleted_at');
-        if (! empty($deptFolder->path)) {
-            $descendantQuery->where(function ($q) use ($deptFolder) {
-                $q->where('path', 'like', $deptFolder->path.'%')
-                    ->orWhere('parent_id', $deptFolder->id);
-            });
-        } else {
-            $descendantQuery->where('parent_id', $deptFolder->id);
+        $query->where(function (Builder $q) use ($dirId, $descendantIds, $dirModel) {
+            if ($dirModel) {
+                $q->where('documents.direction_id', $dirModel->id);
+            } else {
+                $q->where('documents.direction_id', $dirId);
+            }
+            if (! empty($descendantIds)) {
+                $q->orWhereIn('documents.folder_id', $descendantIds)
+                    ->orWhereIn('documents.document_type_id', $descendantIds);
+            }
+        });
+    }
+
+    /**
+     * Apply department filter (alias for backward compatibility).
+     */
+    protected function applyDepartmentFilter(Builder $query, User $user, int $deptId): void
+    {
+        $this->applyDirectionFilter($query, $user, $deptId);
+    }
+
+    /**
+     * Apply service filter (Service V2).
+     */
+    protected function applyServiceFilter(Builder $query, User $user, int $serviceId): void
+    {
+        $serviceQuery = Service::where('id', $serviceId);
+        if (! $user->hasRole('super-admin')) {
+            $serviceQuery->where('organization_id', $user->organization_id);
+        }
+        $service = $serviceQuery->first();
+        if (! $service) {
+            $query->whereRaw('1 = 0');
+
+            return;
         }
 
-        $descendantIds = $descendantQuery->pluck('id')
-            ->push($deptFolder->id)
-            ->all();
+        $folderIds = [];
+        if ($service->folder_id) {
+            $folderIds[] = $service->folder_id;
+            $subFolderIds = Folder::where('parent_id', $service->folder_id)->pluck('id')->toArray();
+            $folderIds = array_merge($folderIds, $subFolderIds);
+        }
 
-        $query->where(function (Builder $q) use ($descendantIds) {
-            $q->whereIn('documents.folder_id', $descendantIds)
-                ->orWhereIn('documents.document_type_id', $descendantIds);
+        $query->where(function (Builder $q) use ($serviceId, $folderIds) {
+            $q->where('documents.service_id', $serviceId);
+            if (! empty($folderIds)) {
+                $q->orWhereIn('documents.folder_id', $folderIds)
+                    ->orWhereIn('documents.document_type_id', $folderIds);
+            }
         });
     }
 

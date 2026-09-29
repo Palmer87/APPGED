@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CategoryController;
+use App\Http\Controllers\Api\V1\DirectionController;
 use App\Http\Controllers\Api\V1\DocumentCommentController;
 use App\Http\Controllers\Api\V1\DocumentController;
 use App\Http\Controllers\Api\V1\DocumentOcrController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\RecentDocumentController;
 use App\Http\Controllers\Api\V1\SearchController;
+use App\Http\Controllers\Api\V1\ServiceController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\TagController;
 use App\Http\Controllers\Api\V1\WorkflowController;
@@ -70,6 +72,17 @@ Route::prefix('v1')->group(function () {
         Route::prefix('organizations')->group(function () {
             Route::get('/current', [OrganizationController::class, 'current'])->name('api.v1.organizations.current');
         });
+
+        // Directions & Services (Organization Structure V2)
+        Route::prefix('directions')->group(function () {
+            Route::get('/{direction}/services', [DirectionController::class, 'services'])->name('api.v1.directions.services');
+        });
+        Route::apiResource('directions', DirectionController::class)->names('api.v1.directions');
+
+        Route::prefix('services')->group(function () {
+            Route::get('/{service}/users', [ServiceController::class, 'users'])->name('api.v1.services.users');
+        });
+        Route::apiResource('services', ServiceController::class)->names('api.v1.services');
 
         // Document Types
         Route::prefix('document-types')->group(function () {

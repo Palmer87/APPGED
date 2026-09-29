@@ -164,6 +164,7 @@ export default function DepartmentsIndex({ departments = [], can = {} }) {
 
             {/* Modal Création */}
             <Modal
+                isOpen={createModalOpen}
                 show={createModalOpen}
                 onClose={() => {
                     setCreateModalOpen(false);
@@ -172,6 +173,12 @@ export default function DepartmentsIndex({ departments = [], can = {} }) {
                 title="Nouvelle direction"
             >
                 <form onSubmit={handleCreate} className="space-y-4">
+                    {form.errors.limit && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
+                            {form.errors.limit}
+                        </div>
+                    )}
+
                     <Input
                         label="Nom de la direction"
                         value={form.data.name}
@@ -214,6 +221,7 @@ export default function DepartmentsIndex({ departments = [], can = {} }) {
 
             {/* Modal Modification */}
             <Modal
+                isOpen={!!editDepartment}
                 show={!!editDepartment}
                 onClose={() => {
                     setEditDepartment(null);

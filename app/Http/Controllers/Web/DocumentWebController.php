@@ -313,12 +313,27 @@ class DocumentWebController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $userContext = [
+            'primary_service_id' => $user->primary_service_id,
+            'primary_direction_id' => $user->primaryService?->direction_id,
+            'primary_service_name' => $user->primaryService?->name,
+            'primary_direction_name' => $user->primaryService?->direction?->name,
+            'services' => $user->services()->with('direction')->get()->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'direction_id' => $s->direction_id,
+                'direction_name' => $s->direction?->name,
+            ]),
+        ];
+
         return Inertia::render('Documents/Create', [
             'departments' => $departments,
             'categories' => $categories,
             'tags' => $tags,
+            'userContext' => $userContext,
             'preselected' => [
-                'department_id' => $request->query('department_id'),
+                'department_id' => $request->query('department_id') ?? $user->primaryService?->direction_id,
+                'service_id' => $request->query('service_id') ?? $user->primary_service_id,
                 'document_type_id' => $request->query('document_type_id'),
             ],
         ]);
@@ -336,6 +351,8 @@ class DocumentWebController extends Controller
             'file' => ['required', 'file', 'max:51200'], // 50MB max
             'name' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'direction_id' => ['nullable', 'integer'],
+            'service_id' => ['nullable', 'integer'],
             'department_id' => ['nullable', 'integer', 'exists:folders,id'],
             'document_type_id' => ['nullable', 'integer', 'exists:folders,id'],
             'folder_id' => ['nullable', 'integer', 'exists:folders,id'],
@@ -376,6 +393,8 @@ class DocumentWebController extends Controller
         $document = $this->documentService->upload([
             'organization_id' => $user->organization_id,
             'uploaded_by' => $user->id,
+            'direction_id' => $request->input('direction_id'),
+            'service_id' => $request->input('service_id'),
             'folder_id' => $folderId,
             'document_type_id' => $docTypeId,
             'name' => $request->input('name') ?: $request->file('file')->getClientOriginalName(),

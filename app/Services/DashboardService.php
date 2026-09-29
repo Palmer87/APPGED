@@ -127,6 +127,13 @@ class DashboardService
                 'storage_limit' => $user->organization?->storage_limit ?? 5368709120,
                 'storage_limit_formatted' => $this->formatBytes($user->organization?->storage_limit ?? 5368709120),
             ],
+            'workspace' => [
+                'direction_name' => $user->primaryService?->direction?->name,
+                'service_name' => $user->primaryService?->name,
+                'associated_services' => $user->services->map(fn ($s) => $s->name)->toArray(),
+                'frequent_document_types' => $this->getFrequentDocumentTypes($user),
+                'actionable_documents_count' => count($workflows['pending_my_action'] ?? []),
+            ],
             'period' => $validPeriod,
             'statistics' => $overview,
             'recent_documents' => $this->formatDocuments($recentDocs),
@@ -751,5 +758,36 @@ class DashboardService
             'folder.created' => 'Dossier créé',
             default => ucfirst(str_replace(['.', '_'], ' ', $action)),
         };
+    }
+
+    /**
+     * Get frequent document types for the user's accessible scope.
+     *
+     * @return array<int, array{id: int, name: string, count: int}>
+     */
+    protected function getFrequentDocumentTypes(User $user): array
+    {
+        $query = Document::query()
+            ->where('documents.organization_id', $user->organization_id)
+            ->whereNotNull('documents.document_type_id');
+        $this->aclService->applyAccessScope($query, $user);
+
+        return $query->select('documents.document_type_id', DB::raw('count(*) as count'))
+            ->groupBy('documents.document_type_id')
+            ->orderByDesc('count')
+            ->take(4)
+            ->get()
+            ->map(function ($row) {
+                $docType = Folder::find($row->document_type_id);
+
+                return [
+                    'id' => (int) $row->document_type_id,
+                    'name' => $docType?->name ?? 'Type documentaire',
+                    'count' => (int) $row->count,
+                ];
+            })
+            ->filter(fn ($item) => ! empty($item['name']))
+            ->values()
+            ->toArray();
     }
 }

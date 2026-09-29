@@ -38,6 +38,7 @@ export default function SearchIndex({
     folders = [],
     categories = [],
     tags = [],
+    userContext = {},
 }) {
     const [departmentId, setDepartmentId] = useState(filters.department_id || '');
     const [documentTypeId, setDocumentTypeId] = useState(filters.document_type_id || '');
@@ -170,6 +171,32 @@ export default function SearchIndex({
                         </Link>
                     </div>
                 </div>
+
+                {/* Quick contextual filter if user has space */}
+                {userContext.primary_service_name && (
+                    <div className="flex items-center justify-between p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 rounded-2xl text-xs text-blue-900 shadow-2xs">
+                        <div className="flex items-center gap-2.5">
+                            <span className="p-1.5 rounded-lg bg-blue-600 text-white">
+                                <Building2 className="w-3.5 h-3.5" />
+                            </span>
+                            <div>
+                                <span className="font-bold">Votre espace de travail :</span>{' '}
+                                <span className="font-semibold text-blue-700">
+                                    {userContext.primary_direction_name} → {userContext.primary_service_name}
+                                </span>
+                            </div>
+                        </div>
+                        {userContext.primary_direction_id && (
+                            <button
+                                type="button"
+                                onClick={() => handleDepartmentChange(String(userContext.primary_direction_id))}
+                                className="px-3 py-1 rounded-xl bg-white border border-blue-200 text-blue-700 font-bold hover:bg-blue-100 transition shadow-2xs"
+                            >
+                                Filtrer sur mon espace
+                            </button>
+                        )}
+                    </div>
+                )}
 
                 {/* Search Form Card */}
                 <form onSubmit={handleSearch} className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-5">

@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Enums\AccessScopeType;
 use App\Exceptions\SubscriptionLimitExceededException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\AuditLog;
+use App\Models\Direction;
 use App\Models\Group;
+use App\Models\Service;
 use App\Models\User;
+use App\Services\AccessScopeService;
 use App\Services\AuditService;
 use App\Services\BillingService;
+use App\Services\OrganizationStructureService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,6 +30,8 @@ class UserWebController extends Controller
 {
     public function __construct(
         protected AuditService $auditService,
+        protected OrganizationStructureService $structureService,
+        protected AccessScopeService $scopeService,
         protected ?BillingService $billingService = null
     ) {
         $this->billingService = $this->billingService ?? app(BillingService::class);
@@ -41,7 +48,7 @@ class UserWebController extends Controller
         app(PermissionRegistrar::class)->setPermissionsTeamId($authUser->organization_id);
 
         $query = User::query()
-            ->with(['roles', 'groups'])
+            ->with(['roles', 'groups', 'primaryService.direction', 'services.direction'])
             ->latest('id');
 
         if (! $authUser->hasRole('super-admin')) {
@@ -77,6 +84,21 @@ class UserWebController extends Controller
             $query->whereHas('groups', fn ($q) => $q->where('groups.id', $groupId));
         }
 
+        // Filter by service
+        if ($request->filled('service_id')) {
+            $serviceId = (int) $request->input('service_id');
+            $query->where(function ($q) use ($serviceId) {
+                $q->where('primary_service_id', $serviceId)
+                    ->orWhereHas('services', fn ($sq) => $sq->where('services.id', $serviceId));
+            });
+        }
+
+        // Filter by direction
+        if ($request->filled('direction_id')) {
+            $directionId = (int) $request->input('direction_id');
+            $query->whereHas('primaryService', fn ($sq) => $sq->where('direction_id', $directionId));
+        }
+
         $users = $query->paginate(15)->withQueryString();
 
         $teamForeignKey = config('permission.column_names.team_foreign_key', 'organization_id');
@@ -93,11 +115,23 @@ class UserWebController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $directions = Direction::where('organization_id', $authUser->organization_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $services = Service::where('organization_id', $authUser->organization_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'direction_id']);
+
         return Inertia::render('Users/Index', [
             'users' => $users,
-            'filters' => $request->only(['search', 'status', 'role', 'group_id']),
+            'filters' => $request->only(['search', 'status', 'role', 'group_id', 'direction_id', 'service_id']),
             'roles' => $roles,
             'groups' => $groups,
+            'directions' => $directions,
+            'services' => $services,
             'can' => [
                 'create' => Gate::allows('create', User::class),
             ],
@@ -128,9 +162,22 @@ class UserWebController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $directions = Direction::where('organization_id', $authUser->organization_id)
+            ->where('is_active', true)
+            ->with(['services' => fn ($q) => $q->where('is_active', true)->orderBy('name')])
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $services = Service::where('organization_id', $authUser->organization_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'direction_id']);
+
         return Inertia::render('Users/Create', [
             'roles' => $roles,
             'groups' => $groups,
+            'directions' => $directions,
+            'services' => $services,
         ]);
     }
 
@@ -159,6 +206,7 @@ class UserWebController extends Controller
                 'phone' => $validated['phone'] ?? null,
                 'job_title' => $validated['job_title'] ?? null,
                 'password' => Hash::make($validated['password']),
+                'primary_service_id' => $validated['primary_service_id'] ?? null,
                 'status' => $validated['status'],
             ]);
 
@@ -166,9 +214,38 @@ class UserWebController extends Controller
             app(PermissionRegistrar::class)->setPermissionsTeamId($authUser->organization_id);
             $user->assignRole($validated['role']);
 
+            // Sync services
+            $primaryId = $validated['primary_service_id'] ?? null;
+            $associatedIds = $validated['associated_service_ids'] ?? [];
+            if ($primaryId || ! empty($associatedIds)) {
+                $this->structureService->syncUserServices(
+                    $user,
+                    $primaryId,
+                    $associatedIds,
+                    $authUser
+                );
+            }
+
+            // Assign Access Scope if specified
+            if (! empty($validated['access_scope_type'])) {
+                $scopeType = AccessScopeType::tryFrom($validated['access_scope_type']);
+                if ($scopeType) {
+                    $targets = match ($scopeType) {
+                        AccessScopeType::Direction => ['direction_id' => $validated['access_scope_direction_id'] ?? null],
+                        AccessScopeType::Service => ['service_id' => $validated['access_scope_service_id'] ?? null],
+                        default => [],
+                    };
+                    $this->scopeService->grantScope(
+                        $user,
+                        $scopeType,
+                        $targets,
+                        $authUser
+                    );
+                }
+            }
+
             // Attach groups
             if (! empty($validated['group_ids'])) {
-                // Verify groups belong to same organization
                 $validGroupIds = Group::where('organization_id', $authUser->organization_id)
                     ->whereIn('id', $validated['group_ids'])
                     ->pluck('id');
@@ -203,7 +280,14 @@ class UserWebController extends Controller
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($user->organization_id);
 
-        $user->load(['roles', 'groups', 'organization']);
+        $user->load([
+            'roles',
+            'groups',
+            'organization',
+            'primaryService.direction',
+            'services.direction',
+            'accessScopes.creator',
+        ]);
 
         // Recent audit history for this user
         $auditLogs = AuditLog::where('user_id', $user->id)
@@ -232,7 +316,7 @@ class UserWebController extends Controller
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($user->organization_id);
 
-        $user->load(['roles', 'groups']);
+        $user->load(['roles', 'groups', 'primaryService.direction', 'services']);
 
         $teamForeignKey = config('permission.column_names.team_foreign_key', 'organization_id');
         $rolesQuery = Role::query();
@@ -248,6 +332,17 @@ class UserWebController extends Controller
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $directions = Direction::where('organization_id', $authUser->organization_id)
+            ->where('is_active', true)
+            ->with(['services' => fn ($q) => $q->where('is_active', true)->orderBy('name')])
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        $services = Service::where('organization_id', $authUser->organization_id)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'direction_id']);
+
         return Inertia::render('Users/Edit', [
             'user' => [
                 'id' => $user->id,
@@ -259,9 +354,14 @@ class UserWebController extends Controller
                 'status' => $user->status,
                 'role' => $user->roles->first()?->name ?? '',
                 'group_ids' => $user->groups->pluck('id')->toArray(),
+                'primary_service_id' => $user->primary_service_id,
+                'direction_id' => $user->primaryService?->direction_id,
+                'associated_service_ids' => $user->services->pluck('id')->toArray(),
             ],
             'roles' => $roles,
             'groups' => $groups,
+            'directions' => $directions,
+            'services' => $services,
             'isSelf' => $user->id === $authUser->id,
         ]);
     }
@@ -287,6 +387,7 @@ class UserWebController extends Controller
             'email' => $user->email,
             'status' => $user->status,
             'role' => $user->roles->first()?->name,
+            'primary_service_id' => $user->primary_service_id,
         ];
 
         DB::transaction(function () use ($validated, $user, $authUser) {
@@ -297,6 +398,7 @@ class UserWebController extends Controller
                 'phone' => $validated['phone'] ?? null,
                 'job_title' => $validated['job_title'] ?? null,
                 'status' => $validated['status'],
+                'primary_service_id' => $validated['primary_service_id'] ?? null,
             ];
 
             if (! empty($validated['password'])) {
@@ -310,6 +412,14 @@ class UserWebController extends Controller
                 app(PermissionRegistrar::class)->setPermissionsTeamId($user->organization_id);
                 $user->syncRoles([$validated['role']]);
             }
+
+            // Sync services
+            $this->structureService->syncUserServices(
+                $user,
+                $validated['primary_service_id'] ?? null,
+                $validated['associated_service_ids'] ?? [],
+                $authUser
+            );
 
             // Sync groups
             if (isset($validated['group_ids'])) {

@@ -2,26 +2,32 @@
 
 namespace App\Providers;
 
+use App\Models\AccessScope;
 use App\Models\AuditLog;
 use App\Models\Category;
+use App\Models\Direction;
 use App\Models\Document;
 use App\Models\DocumentComment;
 use App\Models\Group;
 use App\Models\MetadataDefinition;
 use App\Models\Organization;
+use App\Models\Service;
 use App\Models\Subscription;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Workflow;
 use App\Models\WorkflowInstance;
+use App\Policies\AccessScopePolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\CategoryPolicy;
+use App\Policies\DirectionPolicy;
 use App\Policies\DocumentCommentPolicy;
 use App\Policies\DocumentPolicy;
 use App\Policies\GroupPolicy;
 use App\Policies\MetadataDefinitionPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\RolePolicy;
+use App\Policies\ServicePolicy;
 use App\Policies\SubscriptionPolicy;
 use App\Policies\TagPolicy;
 use App\Policies\UserPolicy;
@@ -67,6 +73,9 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
         Gate::policy(Subscription::class, SubscriptionPolicy::class);
+        Gate::policy(Direction::class, DirectionPolicy::class);
+        Gate::policy(Service::class, ServicePolicy::class);
+        Gate::policy(AccessScope::class, AccessScopePolicy::class);
 
         // Super-admin has global access across all organisations
         Gate::before(function (User $user, $ability) {

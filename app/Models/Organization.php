@@ -72,4 +72,19 @@ class Organization extends Model
     {
         return $this->hasMany(Invoice::class);
     }
+
+    public function directions(): HasMany
+    {
+        return $this->hasMany(Direction::class);
+    }
+
+    public function services(): HasMany
+    {
+        return $this->hasMany(Service::class);
+    }
+
+    public function accessScopes(): HasMany
+    {
+        return $this->hasMany(AccessScope::class);
+    }
 }

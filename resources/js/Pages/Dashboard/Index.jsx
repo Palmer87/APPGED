@@ -33,6 +33,7 @@ import {
 export default function DashboardIndex({
     user = {},
     organization = {},
+    workspace = {},
     period = '30d',
     statistics = {},
     recent_documents = [],
@@ -274,6 +275,56 @@ export default function DashboardIndex({
             <Head title="Tableau de bord - GEDAPP" />
 
             <div className="space-y-6">
+                {/* Contextual Space Banner (Architecture Organisationnelle V2 - Section 16) */}
+                <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-blue-500/20 shrink-0">
+                            {user.first_name ? user.first_name[0] : (user.name ? user.name[0] : 'U')}
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                                    Bonjour {user.first_name || user.name || 'Collaborateur'} 👋
+                                </h1>
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-slate-500">
+                                <span>Votre espace :</span>
+                                {workspace.direction_name || workspace.service_name ? (
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 font-semibold border border-blue-200/60">
+                                        {workspace.direction_name && <span>{workspace.direction_name}</span>}
+                                        {workspace.direction_name && workspace.service_name && <span>→</span>}
+                                        {workspace.service_name && <span>{workspace.service_name}</span>}
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium">
+                                        {organization?.name || 'Organisation'}
+                                    </span>
+                                )}
+                                {workspace.frequent_document_types && workspace.frequent_document_types.length > 0 && (
+                                    <span className="hidden lg:inline-flex items-center gap-1.5 text-slate-400 pl-2 border-l border-slate-200">
+                                        Types fréquents : {workspace.frequent_document_types.map(t => t.name).join(', ')}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                        <div className="px-3 py-2 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                            <span className="text-[10px] text-slate-400 font-medium block">Accessibles</span>
+                            <strong className="text-sm font-bold text-slate-800">{statistics?.total_documents ?? 0}</strong>
+                        </div>
+                        <div className="px-3 py-2 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                            <span className="text-[10px] text-slate-400 font-medium block">Récents</span>
+                            <strong className="text-sm font-bold text-blue-600">{recent_documents?.length ?? 0}</strong>
+                        </div>
+                        <div className="px-3 py-2 rounded-2xl bg-amber-50 border border-amber-100 text-center">
+                            <span className="text-[10px] text-amber-700 font-medium block">À traiter</span>
+                            <strong className="text-sm font-bold text-amber-800">{workflows?.pending_my_action?.length ?? 0}</strong>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Welcome Onboarding Banner */}
                 {!dismissWelcome && flash?.welcome_onboarding && (
                     <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden animate-in fade-in duration-300">

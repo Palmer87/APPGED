@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Category;
+use App\Models\Direction;
 use App\Models\Document;
 use App\Models\DocumentVersion;
 use App\Models\Folder;
+use App\Models\Service;
 use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -33,14 +36,47 @@ class DocumentService
      */
     public function upload(array $data, UploadedFile $file): Document
     {
-        // Validate tenant ownership of folder (if provided) and resolve document type
+        // Validate tenant ownership of folder (if provided) and resolve document type & structure
         $documentTypeId = null;
+        $serviceId = $data['service_id'] ?? null;
+        $directionId = $data['direction_id'] ?? null;
+
         if (! empty($data['folder_id'])) {
             $folder = Folder::findOrFail($data['folder_id']);
             if ($folder->organization_id !== $data['organization_id']) {
                 abort(403, 'Folder does not belong to your organization');
             }
             $documentTypeId = $folder->getDocumentType()?->id;
+            $serviceId = $serviceId ?? $folder->service_id;
+            if (! $serviceId && ($servFolder = $folder->getService())) {
+                $serviceId = $servFolder->service_id ?? Service::where('folder_id', $servFolder->id)->value('id');
+            }
+
+            $directionId = $directionId ?? $folder->direction_id;
+            if (! $directionId && ($dirFolder = $folder->getDirection())) {
+                $directionId = $dirFolder->direction_id ?? Direction::where('folder_id', $dirFolder->id)->value('id');
+            }
+        }
+
+        if ($serviceId && ! $directionId) {
+            $directionId = Service::find($serviceId)?->direction_id;
+        }
+
+        // If not set, check if uploaded_by user has a primary service
+        if (! $serviceId && ! empty($data['uploaded_by'])) {
+            $uploader = User::find($data['uploaded_by']);
+            if ($uploader?->primary_service_id) {
+                $serviceId = $uploader->primary_service_id;
+                $directionId = $directionId ?? $uploader->primaryService?->direction_id;
+            }
+        }
+
+        // Validate foreign key existence to preserve backward compatibility with raw folder uploads
+        if ($directionId && ! Direction::where('id', $directionId)->where('organization_id', $data['organization_id'])->exists()) {
+            $directionId = null;
+        }
+        if ($serviceId && ! Service::where('id', $serviceId)->where('organization_id', $data['organization_id'])->exists()) {
+            $serviceId = null;
         }
 
         $this->validateFile($file);
@@ -58,6 +94,8 @@ class DocumentService
         // Prepare document attributes (will be updated with version path after insert)
         $docAttributes = [
             'organization_id' => $orgId,
+            'direction_id' => $directionId,
+            'service_id' => $serviceId,
             'folder_id' => $data['folder_id'] ?? null,
             'document_type_id' => $data['document_type_id'] ?? $documentTypeId,
             'uploaded_by' => $data['uploaded_by'],

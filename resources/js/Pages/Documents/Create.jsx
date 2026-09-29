@@ -29,8 +29,10 @@ export default function DocumentCreate({
     categories = [],
     tags = [],
     preselected = {},
+    userContext = {},
 }) {
-    const [selectedDepartmentId, setSelectedDepartmentId] = useState(preselected.department_id || '');
+    const defaultDeptId = preselected.department_id || userContext.primary_direction_id || '';
+    const [selectedDepartmentId, setSelectedDepartmentId] = useState(defaultDeptId);
     const [selectedDocTypeId, setSelectedDocTypeId] = useState(preselected.document_type_id || '');
     const [dragActive, setDragActive] = useState(false);
 
@@ -38,7 +40,9 @@ export default function DocumentCreate({
         file: null,
         name: '',
         description: '',
-        department_id: preselected.department_id || '',
+        direction_id: userContext.primary_direction_id || '',
+        service_id: userContext.primary_service_id || '',
+        department_id: defaultDeptId,
         document_type_id: preselected.document_type_id || '',
         metadata: {},
         category_ids: [],
@@ -176,6 +180,26 @@ export default function DocumentCreate({
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Left & Middle Column: Interactive Business Form */}
                     <div className="lg:col-span-2 space-y-6">
+                        {/* Contexte Utilisateur (Section 14) */}
+                        {userContext.primary_service_name && (
+                            <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/70 rounded-2xl flex items-center justify-between text-xs text-blue-900 shadow-2xs">
+                                <div className="flex items-center gap-2.5">
+                                    <span className="p-1.5 rounded-lg bg-blue-600 text-white">
+                                        <Building2 className="w-3.5 h-3.5" />
+                                    </span>
+                                    <div>
+                                        <span className="font-bold">Espace prérempli selon votre rattachement :</span>{' '}
+                                        <span className="font-semibold text-blue-700">
+                                            {userContext.primary_direction_name} → {userContext.primary_service_name}
+                                        </span>
+                                    </div>
+                                </div>
+                                <span className="text-[10px] text-blue-500 font-medium hidden sm:inline">
+                                    Contexte automatique
+                                </span>
+                            </div>
+                        )}
+
                         {/* Section 1: Direction & Type documentaire */}
                         <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-5">
                             <div className="flex items-center gap-2.5 pb-3 border-b border-slate-100">

@@ -8,9 +8,11 @@ use App\Http\Controllers\DocumentPreviewController;
 use App\Http\Controllers\DocumentShareController;
 use App\Http\Controllers\FavoriteController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Web\AccessScopeWebController;
 use App\Http\Controllers\Web\AuthWebController;
 use App\Http\Controllers\Web\CategoryWebController;
 use App\Http\Controllers\Web\DepartmentWebController;
+use App\Http\Controllers\Web\DirectionWebController;
 use App\Http\Controllers\Web\DocumentTypeWebController;
 use App\Http\Controllers\Web\DocumentWebController;
 use App\Http\Controllers\Web\FavoriteWebController;
@@ -22,6 +24,7 @@ use App\Http\Controllers\Web\RecentWebController;
 use App\Http\Controllers\Web\RegistrationWebController;
 use App\Http\Controllers\Web\RoleWebController;
 use App\Http\Controllers\Web\SearchWebController;
+use App\Http\Controllers\Web\ServiceWebController;
 use App\Http\Controllers\Web\ShareWebController;
 use App\Http\Controllers\Web\SubscriptionWebController;
 use App\Http\Controllers\Web\TagWebController;
@@ -87,11 +90,41 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/folders/{folder}', [FolderWebController::class, 'update'])->name('folders.update');
     Route::delete('/folders/{folder}', [FolderWebController::class, 'destroy'])->name('folders.destroy');
 
-    // Departments (Directions) Web
+    // Departments (Legacy / Compatibility)
     Route::get('/departments', [DepartmentWebController::class, 'index'])->name('departments.index');
     Route::post('/departments', [DepartmentWebController::class, 'store'])->name('departments.store');
     Route::put('/departments/{department}', [DepartmentWebController::class, 'update'])->name('departments.update');
     Route::delete('/departments/{department}', [DepartmentWebController::class, 'destroy'])->name('departments.destroy');
+
+    // Directions Web (Organization Structure V2)
+    Route::get('/directions', [DirectionWebController::class, 'index'])->name('directions.index');
+    Route::get('/admin/directions', [DirectionWebController::class, 'index'])->name('admin.directions.index');
+    Route::post('/directions', [DirectionWebController::class, 'store'])->name('directions.store');
+    Route::post('/admin/directions', [DirectionWebController::class, 'store'])->name('admin.directions.store');
+    Route::put('/directions/{direction}', [DirectionWebController::class, 'update'])->name('directions.update');
+    Route::put('/admin/directions/{direction}', [DirectionWebController::class, 'update'])->name('admin.directions.update');
+    Route::delete('/directions/{direction}', [DirectionWebController::class, 'destroy'])->name('directions.destroy');
+    Route::delete('/admin/directions/{direction}', [DirectionWebController::class, 'destroy'])->name('admin.directions.destroy');
+
+    // Services Web (Organization Structure V2)
+    Route::get('/services', [ServiceWebController::class, 'index'])->name('services.index');
+    Route::get('/admin/services', [ServiceWebController::class, 'index'])->name('admin.services.index');
+    Route::post('/services', [ServiceWebController::class, 'store'])->name('services.store');
+    Route::post('/admin/services', [ServiceWebController::class, 'store'])->name('admin.services.store');
+    Route::put('/services/{service}', [ServiceWebController::class, 'update'])->name('services.update');
+    Route::put('/admin/services/{service}', [ServiceWebController::class, 'update'])->name('admin.services.update');
+    Route::delete('/services/{service}', [ServiceWebController::class, 'destroy'])->name('services.destroy');
+    Route::delete('/admin/services/{service}', [ServiceWebController::class, 'destroy'])->name('admin.services.destroy');
+    Route::post('/services/{service}/users', [ServiceWebController::class, 'assignUser'])->name('services.users.assign');
+    Route::delete('/services/{service}/users/{user}', [ServiceWebController::class, 'removeUser'])->name('services.users.remove');
+
+    // Access Scopes Web (Périmètres d'accès V2)
+    Route::get('/access-scopes', [AccessScopeWebController::class, 'index'])->name('access_scopes.index');
+    Route::get('/admin/access-scopes', [AccessScopeWebController::class, 'index'])->name('admin.access_scopes.index');
+    Route::post('/access-scopes', [AccessScopeWebController::class, 'store'])->name('access_scopes.store');
+    Route::post('/admin/access-scopes', [AccessScopeWebController::class, 'store'])->name('admin.access_scopes.store');
+    Route::delete('/access-scopes/{accessScope}', [AccessScopeWebController::class, 'destroy'])->name('access_scopes.destroy');
+    Route::delete('/admin/access-scopes/{accessScope}', [AccessScopeWebController::class, 'destroy'])->name('admin.access_scopes.destroy');
 
     // Document Types Web
     Route::get('/document-types', [DocumentTypeWebController::class, 'index'])->name('document_types.index');

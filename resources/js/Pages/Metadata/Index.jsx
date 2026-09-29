@@ -10,7 +10,7 @@ import Table from '../../Components/Table';
 import Badge from '../../Components/Badge';
 import ConfirmDialog from '../../Components/ConfirmDialog';
 import EmptyState from '../../Components/EmptyState';
-import { Plus, Edit2, Trash2, FileSpreadsheet } from 'lucide-react';
+import { Plus, Edit2, Trash2, FileSpreadsheet, AlertCircle } from 'lucide-react';
 
 export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
     const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -25,6 +25,27 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
         is_required: false,
         is_active: true,
     });
+
+    const autoGenerateKey = (name) => {
+        let key = name
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9_]/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .replace(/_+/g, '_');
+
+        if (key && !/^[a-z]/.test(key)) {
+            key = `meta_${key}`;
+        }
+        return key;
+    };
+
+    const openCreate = () => {
+        form.reset();
+        form.clearErrors();
+        setCreateModalOpen(true);
+    };
 
     const handleCreate = (e) => {
         e.preventDefault();
@@ -55,6 +76,7 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
     };
 
     const openEdit = (d) => {
+        form.clearErrors();
         setEditDef(d);
         form.setData({
             name: d.name,
@@ -76,7 +98,7 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
                         <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Métadonnées personnalisées</h1>
                         <p className="text-xs text-slate-500 mt-1">Définissez des champs sur-mesure pour indexer précisément vos documents métier.</p>
                     </div>
-                    <Button variant="primary" onClick={() => setCreateModalOpen(true)}>
+                    <Button variant="primary" onClick={openCreate}>
                         <Plus className="w-4 h-4" />
                         Nouveau champ
                     </Button>
@@ -135,7 +157,7 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
                         title="Aucun champ personnalisé défini"
                         description="Créez des métadonnées (Référence contrat, Montant, Client, Date d'échéance...) pour enrichir vos documents."
                         actionLabel="Créer un champ"
-                        onAction={() => setCreateModalOpen(true)}
+                        onAction={openCreate}
                     />
                 )}
             </div>
@@ -143,6 +165,20 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
             {/* Create Modal */}
             <Modal isOpen={createModalOpen} onClose={() => setCreateModalOpen(false)} title="Nouveau champ de métadonnée">
                 <form onSubmit={handleCreate} className="space-y-4">
+                    {Object.keys(form.errors).length > 0 && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold">Erreur de validation :</p>
+                                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                    {Object.values(form.errors).map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
                     <Input
                         id="meta-name"
                         label="Libellé du champ"
@@ -153,22 +189,30 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
                             form.setData({
                                 ...form.data,
                                 name: val,
-                                key: form.data.key || val.toLowerCase().replace(/[^a-z0-9]/g, '_').replace(/^_+|_+$/g, ''),
+                                key: autoGenerateKey(val),
                             });
                         }}
                         placeholder="Ex: Référence Contrat, Montant HT..."
                         error={form.errors.name}
                     />
 
-                    <Input
-                        id="meta-key"
-                        label="Clé unique (minuscules, chiffres et tirets bas)"
-                        required
-                        value={form.data.key}
-                        onChange={(e) => form.setData('key', e.target.value)}
-                        placeholder="Ex: reference_contrat, montant_ht"
-                        error={form.errors.key}
-                    />
+                    <div>
+                        <Input
+                            id="meta-key"
+                            label="Clé unique (minuscules, chiffres et tirets bas)"
+                            required
+                            value={form.data.key}
+                            onChange={(e) => {
+                                const clean = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                                form.setData('key', clean);
+                            }}
+                            placeholder="Ex: reference_contrat, montant_ht"
+                            error={form.errors.key}
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                            Commence par une minuscule, sans accents ni espaces (ex: <code>reference_contrat</code>).
+                        </p>
+                    </div>
 
                     <Select
                         id="meta-type"
@@ -219,6 +263,20 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
             {/* Edit Modal */}
             <Modal isOpen={!!editDef} onClose={() => setEditDef(null)} title="Modifier le champ de métadonnée">
                 <form onSubmit={handleUpdate} className="space-y-4">
+                    {Object.keys(form.errors).length > 0 && (
+                        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+                            <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold">Erreur de validation :</p>
+                                <ul className="list-disc list-inside mt-1 space-y-0.5">
+                                    {Object.values(form.errors).map((err, idx) => (
+                                        <li key={idx}>{err}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+
                     <Input
                         id="edit-meta-name"
                         label="Libellé du champ"
@@ -228,14 +286,22 @@ export default function MetadataIndex({ definitions = [], allowedTypes = [] }) {
                         error={form.errors.name}
                     />
 
-                    <Input
-                        id="edit-meta-key"
-                        label="Clé unique"
-                        required
-                        value={form.data.key}
-                        onChange={(e) => form.setData('key', e.target.value)}
-                        error={form.errors.key}
-                    />
+                    <div>
+                        <Input
+                            id="edit-meta-key"
+                            label="Clé unique"
+                            required
+                            value={form.data.key}
+                            onChange={(e) => {
+                                const clean = e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+                                form.setData('key', clean);
+                            }}
+                            error={form.errors.key}
+                        />
+                        <p className="text-[11px] text-slate-500 mt-1">
+                            Commence par une minuscule, sans accents ni espaces (ex: <code>reference_contrat</code>).
+                        </p>
+                    </div>
 
                     <Select
                         id="edit-meta-type"

@@ -1,23 +1,27 @@
 import React, { useEffect } from 'react';
 
 export default function Modal({
-    isOpen = false,
+    isOpen,
+    show,
+    open,
     onClose,
     title,
     children,
     maxWidth = 'max-w-lg',
 }) {
+    const isVisible = Boolean(isOpen ?? show ?? open ?? false);
+
     useEffect(() => {
         const handleKeyDown = (e) => {
-            if (e.key === 'Escape' && isOpen && onClose) {
+            if (e.key === 'Escape' && isVisible && onClose) {
                 onClose();
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, onClose]);
+    }, [isVisible, onClose]);
 
-    if (!isOpen) return null;
+    if (!isVisible) return null;
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
