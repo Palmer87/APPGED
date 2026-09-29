@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Web;
 
 use App\Enums\FolderType;
+use App\Exceptions\SubscriptionLimitExceededException;
 use App\Http\Controllers\Controller;
 use App\Models\Folder;
 use App\Models\MetadataDefinition;
+use App\Services\BillingService;
 use App\Services\FolderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,8 +18,11 @@ use Inertia\Response;
 class DocumentTypeWebController extends Controller
 {
     public function __construct(
-        protected FolderService $folderService
-    ) {}
+        protected FolderService $folderService,
+        protected ?BillingService $billingService = null
+    ) {
+        $this->billingService = $this->billingService ?? app(BillingService::class);
+    }
 
     /**
      * List all document types grouped by department.
@@ -76,6 +81,12 @@ class DocumentTypeWebController extends Controller
     {
         $user = $request->user();
         Gate::authorize('createDocumentType', Folder::class);
+
+        try {
+            $this->billingService->assertCanAddDocumentType(1, $user->organization_id);
+        } catch (SubscriptionLimitExceededException $e) {
+            return back()->withErrors(['limit' => $e->getMessage()])->with('error', $e->getMessage());
+        }
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],

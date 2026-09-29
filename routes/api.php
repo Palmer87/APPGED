@@ -13,8 +13,10 @@ use App\Http\Controllers\Api\V1\FolderController;
 use App\Http\Controllers\Api\V1\MetadataController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\OrganizationController;
+use App\Http\Controllers\Api\V1\PlanController;
 use App\Http\Controllers\Api\V1\RecentDocumentController;
 use App\Http\Controllers\Api\V1\SearchController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\TagController;
 use App\Http\Controllers\Api\V1\WorkflowController;
 use App\Http\Controllers\Api\V1\WorkflowInstanceController;
@@ -38,13 +40,24 @@ Route::get('/user', function (Request $request) {
 */
 Route::prefix('v1')->group(function () {
 
-    // Public authentication routes
+    // Public authentication & plans routes
     Route::prefix('auth')->group(function () {
         Route::post('/login', [AuthController::class, 'login'])->name('api.v1.auth.login');
     });
 
+    Route::get('/plans', [PlanController::class, 'index'])->name('api.v1.plans.index');
+
     // Authenticated Sanctum routes with tenant team context
     Route::middleware(['auth:sanctum', EnsureApiTeamContext::class])->group(function () {
+
+        // Subscription & Billing
+        Route::prefix('subscription')->group(function () {
+            Route::get('/', [SubscriptionController::class, 'show'])->name('api.v1.subscription.show');
+            Route::get('/usage', [SubscriptionController::class, 'usage'])->name('api.v1.subscription.usage');
+            Route::post('/change-plan', [SubscriptionController::class, 'changePlan'])->name('api.v1.subscription.change_plan');
+            Route::post('/cancel', [SubscriptionController::class, 'cancel'])->name('api.v1.subscription.cancel');
+            Route::post('/resume', [SubscriptionController::class, 'resume'])->name('api.v1.subscription.resume');
+        });
 
         // Auth
         Route::prefix('auth')->group(function () {

@@ -22,7 +22,11 @@ export default function Tabs({
                                     : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
                             }`}
                         >
-                            {tab.icon}
+                            {tab.icon && (
+                                React.isValidElement(tab.icon)
+                                    ? tab.icon
+                                    : React.createElement(tab.icon, { className: 'w-4 h-4' })
+                            )}
                             {tab.label}
                             {tab.badge !== undefined && tab.badge !== null && (
                                 <span

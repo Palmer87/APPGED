@@ -16,11 +16,14 @@ use App\Http\Controllers\Web\DocumentWebController;
 use App\Http\Controllers\Web\FavoriteWebController;
 use App\Http\Controllers\Web\FolderWebController;
 use App\Http\Controllers\Web\MetadataWebController;
+use App\Http\Controllers\Web\PricingWebController;
 use App\Http\Controllers\Web\ProfileWebController;
 use App\Http\Controllers\Web\RecentWebController;
+use App\Http\Controllers\Web\RegistrationWebController;
 use App\Http\Controllers\Web\RoleWebController;
 use App\Http\Controllers\Web\SearchWebController;
 use App\Http\Controllers\Web\ShareWebController;
+use App\Http\Controllers\Web\SubscriptionWebController;
 use App\Http\Controllers\Web\TagWebController;
 use App\Http\Controllers\Web\UserWebController;
 use App\Http\Controllers\WorkflowController;
@@ -32,6 +35,19 @@ use Inertia\Inertia;
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
+
+Route::get('/pricing', [PricingWebController::class, 'index'])->name('pricing');
+
+// Inscription SaaS public (Organisation -> Admin -> Plan -> 14 jours d'essai)
+Route::middleware('guest')->group(function () {
+    Route::get('/register', fn () => redirect()->route('register.organization'))->name('register');
+    Route::get('/register/organization', [RegistrationWebController::class, 'createOrganization'])->name('register.organization');
+    Route::post('/register/organization', [RegistrationWebController::class, 'storeOrganization'])->name('register.organization.store');
+    Route::get('/register/admin', [RegistrationWebController::class, 'createAdmin'])->name('register.admin');
+    Route::post('/register/admin', [RegistrationWebController::class, 'storeAdmin'])->name('register.admin.store');
+    Route::get('/register/plan', [RegistrationWebController::class, 'createPlan'])->name('register.plan');
+    Route::post('/register/plan', [RegistrationWebController::class, 'storePlan'])->name('register.plan.store');
+});
 
 Route::get('/login', [AuthWebController::class, 'create'])->name('login');
 Route::post('/login', [AuthWebController::class, 'store'])->name('login.store');
@@ -237,4 +253,11 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/comments/{comment}', [DocumentCommentController::class, 'update'])->name('comments.update');
     Route::delete('/comments/{comment}', [DocumentCommentController::class, 'destroy'])->name('comments.destroy');
     Route::post('/comments/{comment}/restore', [DocumentCommentController::class, 'restore'])->name('comments.restore')->withTrashed();
+
+    // Organization Subscription & Billing
+    Route::get('/settings/subscription', [SubscriptionWebController::class, 'index'])->name('subscription.show');
+    Route::get('/subscription/choose', [SubscriptionWebController::class, 'choose'])->name('subscription.choose');
+    Route::post('/settings/subscription/change-plan', [SubscriptionWebController::class, 'changePlan'])->name('subscription.change-plan');
+    Route::post('/settings/subscription/cancel', [SubscriptionWebController::class, 'cancel'])->name('subscription.cancel');
+    Route::post('/settings/subscription/resume', [SubscriptionWebController::class, 'resume'])->name('subscription.resume');
 });

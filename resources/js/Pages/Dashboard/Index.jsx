@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '../../Layouts/AuthenticatedLayout';
 import {
     Folder,
@@ -25,7 +25,9 @@ import {
     Check,
     Eye,
     Download,
-    MoreHorizontal
+    MoreHorizontal,
+    Sparkles,
+    X
 } from 'lucide-react';
 
 export default function DashboardIndex({
@@ -39,8 +41,14 @@ export default function DashboardIndex({
     notifications = { unread_count: 0, recent: [] },
     recent_activity = [],
     charts = {},
-    tasks: initialTasks = []
+    tasks: initialTasks = [],
+    billing = null,
+    flash: propsFlash = {}
 }) {
+    const pageProps = usePage()?.props || {};
+    const flash = (propsFlash && Object.keys(propsFlash).length > 0) ? propsFlash : (pageProps.flash || {});
+    const [dismissWelcome, setDismissWelcome] = useState(false);
+
     const formatNumber = (val) => new Intl.NumberFormat('fr-FR').format(val || 0);
 
     // Live Clock & Formatted Date
@@ -266,6 +274,89 @@ export default function DashboardIndex({
             <Head title="Tableau de bord - GEDAPP" />
 
             <div className="space-y-6">
+                {/* Welcome Onboarding Banner */}
+                {!dismissWelcome && flash?.welcome_onboarding && (
+                    <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden animate-in fade-in duration-300">
+                        <button
+                            type="button"
+                            onClick={() => setDismissWelcome(true)}
+                            className="absolute top-4 right-4 p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition cursor-pointer"
+                            aria-label="Fermer"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+                        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                            <div className="space-y-3 w-full">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 border border-blue-400/30 text-blue-200 text-xs font-semibold">
+                                    <Sparkles className="w-3.5 h-3.5 text-blue-300" />
+                                    <span>Nouvel espace initialisé</span>
+                                </div>
+                                <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                                    Bienvenue sur GEDAPP 👋
+                                </h2>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
+                                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                                        <span className="text-[11px] text-slate-300 block">Votre organisation :</span>
+                                        <strong className="text-sm font-bold text-white truncate block">
+                                            {flash.welcome_onboarding.organization_name || organization?.name}
+                                        </strong>
+                                    </div>
+                                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                                        <span className="text-[11px] text-slate-300 block">Administrateur :</span>
+                                        <strong className="text-sm font-bold text-white truncate block">
+                                            {flash.welcome_onboarding.admin_name || user?.name}
+                                        </strong>
+                                    </div>
+                                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                                        <span className="text-[11px] text-slate-300 block">Plan :</span>
+                                        <strong className="text-sm font-bold text-white truncate block">
+                                            {flash.welcome_onboarding.plan_name}
+                                        </strong>
+                                    </div>
+                                    <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10">
+                                        <span className="text-[11px] text-slate-300 block">Essai :</span>
+                                        <strong className="text-sm font-bold text-emerald-300 truncate block">
+                                            {flash.welcome_onboarding.trial_days || 14} jours restants
+                                        </strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Trial Alert Banner if currently trialing */}
+                {billing?.is_trial && billing.trial_days_remaining !== undefined && (
+                    <div className={`p-4 rounded-2xl border flex items-center justify-between gap-4 ${
+                        billing.trial_days_remaining <= 3
+                            ? 'bg-amber-50 border-amber-200 text-amber-900'
+                            : 'bg-blue-50/80 border-blue-200/80 text-blue-900'
+                    }`}>
+                        <div className="flex items-center gap-3">
+                            <Clock className={`w-5 h-5 shrink-0 ${
+                                billing.trial_days_remaining <= 3 ? 'text-amber-600' : 'text-blue-600'
+                            }`} />
+                            <div className="text-xs">
+                                <span className="font-bold">
+                                    {billing.trial_days_remaining > 0
+                                        ? `Votre période d'essai se termine dans ${billing.trial_days_remaining} jour(s).`
+                                        : "Votre période d'essai gratuit a expiré."}
+                                </span>
+                                <span className="opacity-80 ml-1.5 hidden sm:inline">
+                                    Choisissez votre abonnement pour débloquer toutes les fonctionnalités sans interruption.
+                                </span>
+                            </div>
+                        </div>
+                        <Link
+                            href="/subscription/choose"
+                            className="shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition"
+                        >
+                            Changer de plan
+                        </Link>
+                    </div>
+                )}
+
                 {/* 2-Column Responsive Layout: Main Area (Col 1) & Right Sidebar (Col 2) */}
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
                     
@@ -747,6 +838,100 @@ export default function DashboardIndex({
                                 <p className="text-xs text-slate-500 italic text-center font-medium">
                                     « Des documents bien gérés, une entreprise plus sereine. »
                                 </p>
+                            </div>
+                        </div>
+
+                        {/* Widget: Abonnement & Utilisation */}
+                        <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-2xs">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                    Plan actuel
+                                </span>
+                                <span className="text-xs font-black text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
+                                    {billing?.plan_name || 'Essentiel'}
+                                </span>
+                            </div>
+
+                            <div className="space-y-3 pt-1">
+                                {/* Users */}
+                                <div>
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                        <span className="text-slate-600 font-medium">Utilisateurs</span>
+                                        <span className="font-bold text-slate-900">
+                                            {billing?.usage?.metrics?.users?.formatted || '0 / 5'}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="h-1.5 rounded-full bg-blue-600"
+                                            style={{ width: `${Math.min(100, billing?.usage?.metrics?.users?.percentage || 0)}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Storage */}
+                                <div>
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                        <span className="text-slate-600 font-medium">Stockage</span>
+                                        <span className="font-bold text-slate-900">
+                                            {billing?.usage?.metrics?.storage?.formatted || '0 Go / 20 Go'}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className={`h-1.5 rounded-full ${
+                                                (billing?.usage?.metrics?.storage?.percentage || 0) >= 80 ? 'bg-amber-500' : 'bg-blue-600'
+                                            }`}
+                                            style={{ width: `${Math.min(100, billing?.usage?.metrics?.storage?.percentage || 0)}%` }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* OCR */}
+                                <div>
+                                    <div className="flex items-center justify-between text-xs mb-1">
+                                        <span className="text-slate-600 font-medium">Pages OCR (ce mois)</span>
+                                        <span className="font-bold text-slate-900">
+                                            {billing?.usage?.metrics?.ocr?.formatted || '0 / 100'}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                        <div
+                                            className="h-1.5 rounded-full bg-indigo-600"
+                                            style={{ width: `${Math.min(100, billing?.usage?.metrics?.ocr?.percentage || 0)}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Approaching limit warning */}
+                            {(billing?.usage?.metrics?.storage?.percentage || 0) >= 80 && (
+                                <div className="mt-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                                    <p className="font-bold">
+                                        Votre stockage atteint {billing.usage.metrics.storage.percentage}% de votre limite.
+                                    </p>
+                                    <Link
+                                        href="/subscription/choose"
+                                        className="mt-2 inline-flex items-center gap-1 font-bold text-amber-700 hover:text-amber-800 underline"
+                                    >
+                                        Augmenter mon stockage →
+                                    </Link>
+                                </div>
+                            )}
+
+                            <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs">
+                                <Link
+                                    href="/settings/subscription"
+                                    className="text-slate-500 hover:text-slate-900 font-semibold"
+                                >
+                                    Détails complets
+                                </Link>
+                                <Link
+                                    href="/subscription/choose"
+                                    className="text-blue-600 hover:text-blue-700 font-bold"
+                                >
+                                    Changer de plan →
+                                </Link>
                             </div>
                         </div>
 

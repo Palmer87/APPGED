@@ -9,6 +9,7 @@ use App\Models\DocumentComment;
 use App\Models\Group;
 use App\Models\MetadataDefinition;
 use App\Models\Organization;
+use App\Models\Subscription;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Workflow;
@@ -21,6 +22,7 @@ use App\Policies\GroupPolicy;
 use App\Policies\MetadataDefinitionPolicy;
 use App\Policies\OrganizationPolicy;
 use App\Policies\RolePolicy;
+use App\Policies\SubscriptionPolicy;
 use App\Policies\TagPolicy;
 use App\Policies\UserPolicy;
 use App\Policies\WorkflowInstancePolicy;
@@ -47,6 +49,7 @@ class AuthServiceProvider extends ServiceProvider
         AuditLog::class => AuditLogPolicy::class,
         Workflow::class => WorkflowPolicy::class,
         WorkflowInstance::class => WorkflowInstancePolicy::class,
+        Subscription::class => SubscriptionPolicy::class,
     ];
 
     /**
@@ -63,6 +66,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(DocumentComment::class, DocumentCommentPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(Role::class, RolePolicy::class);
+        Gate::policy(Subscription::class, SubscriptionPolicy::class);
 
         // Super-admin has global access across all organisations
         Gate::before(function (User $user, $ability) {

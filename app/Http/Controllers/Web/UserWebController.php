@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Exceptions\SubscriptionLimitExceededException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
@@ -9,6 +10,7 @@ use App\Models\AuditLog;
 use App\Models\Group;
 use App\Models\User;
 use App\Services\AuditService;
+use App\Services\BillingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,8 +24,11 @@ use Spatie\Permission\PermissionRegistrar;
 class UserWebController extends Controller
 {
     public function __construct(
-        protected AuditService $auditService
-    ) {}
+        protected AuditService $auditService,
+        protected ?BillingService $billingService = null
+    ) {
+        $this->billingService = $this->billingService ?? app(BillingService::class);
+    }
 
     /**
      * Display a listing of organization users with search, filters, and pagination.
@@ -74,12 +79,12 @@ class UserWebController extends Controller
 
         $users = $query->paginate(15)->withQueryString();
 
-        // Available roles for filter and forms
+        $teamForeignKey = config('permission.column_names.team_foreign_key', 'organization_id');
         $rolesQuery = Role::query();
         if (! $authUser->hasRole('super-admin')) {
-            $rolesQuery->where(function ($q) use ($authUser) {
-                $q->where('team_id', $authUser->organization_id)
-                    ->orWhereNull('team_id');
+            $rolesQuery->where(function ($q) use ($authUser, $teamForeignKey) {
+                $q->where($teamForeignKey, $authUser->organization_id)
+                    ->orWhereNull($teamForeignKey);
             })->where('name', '!=', 'super-admin');
         }
         $roles = $rolesQuery->orderBy('name')->get();
@@ -109,11 +114,12 @@ class UserWebController extends Controller
 
         app(PermissionRegistrar::class)->setPermissionsTeamId($authUser->organization_id);
 
+        $teamForeignKey = config('permission.column_names.team_foreign_key', 'organization_id');
         $rolesQuery = Role::query();
         if (! $authUser->hasRole('super-admin')) {
-            $rolesQuery->where(function ($q) use ($authUser) {
-                $q->where('team_id', $authUser->organization_id)
-                    ->orWhereNull('team_id');
+            $rolesQuery->where(function ($q) use ($authUser, $teamForeignKey) {
+                $q->where($teamForeignKey, $authUser->organization_id)
+                    ->orWhereNull($teamForeignKey);
             })->where('name', '!=', 'super-admin');
         }
         $roles = $rolesQuery->orderBy('name')->get(['id', 'name']);
@@ -135,6 +141,12 @@ class UserWebController extends Controller
     {
         $authUser = $request->user();
         Gate::authorize('create', User::class);
+
+        try {
+            $this->billingService->assertCanAddUser(1, $authUser->organization_id);
+        } catch (SubscriptionLimitExceededException $e) {
+            return back()->withErrors(['limit' => $e->getMessage()])->with('error', $e->getMessage());
+        }
 
         $validated = $request->validated();
 
@@ -222,11 +234,12 @@ class UserWebController extends Controller
 
         $user->load(['roles', 'groups']);
 
+        $teamForeignKey = config('permission.column_names.team_foreign_key', 'organization_id');
         $rolesQuery = Role::query();
         if (! $authUser->hasRole('super-admin')) {
-            $rolesQuery->where(function ($q) use ($authUser) {
-                $q->where('team_id', $authUser->organization_id)
-                    ->orWhereNull('team_id');
+            $rolesQuery->where(function ($q) use ($authUser, $teamForeignKey) {
+                $q->where($teamForeignKey, $authUser->organization_id)
+                    ->orWhereNull($teamForeignKey);
             })->where('name', '!=', 'super-admin');
         }
         $roles = $rolesQuery->orderBy('name')->get(['id', 'name']);

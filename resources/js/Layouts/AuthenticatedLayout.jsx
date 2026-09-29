@@ -25,7 +25,8 @@ import {
     Crown,
     User as UserIcon,
     LogOut,
-    ArrowRight
+    ArrowRight,
+    CreditCard
 } from 'lucide-react';
 import Toast from '../Components/Toast';
 
@@ -71,6 +72,7 @@ export default function AuthenticatedLayout({ children, title }) {
         { name: 'Types documentaires', href: '/document-types', icon: FileStack, current: isUrl('/document-types') },
         { name: 'Utilisateurs', href: '/users', icon: Users, current: isUrl('/users') },
         { name: 'Rôles & permissions', href: '/roles', icon: Shield, current: isUrl('/roles') },
+        { name: 'Abonnement', href: '/settings/subscription', icon: CreditCard, current: isUrl('/settings/subscription') },
         { name: 'Paramètres', href: '/settings', icon: Settings, current: isUrl('/settings') },
     ];
 
@@ -178,10 +180,10 @@ export default function AuthenticatedLayout({ children, title }) {
                         </div>
                     </div>
                     <Link
-                        href="#tarifs"
+                        href="/settings/subscription"
                         className="mt-3.5 w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-600/30 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-xs font-semibold transition-colors border border-blue-500/30"
                     >
-                        <span>Voir nos offres</span>
+                        <span>Gérer mon abonnement</span>
                         <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                 </div>

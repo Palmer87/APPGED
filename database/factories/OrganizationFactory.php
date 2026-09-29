@@ -24,6 +24,9 @@ class OrganizationFactory extends Factory
             'email' => fake()->companyEmail(),
             'phone' => fake()->phoneNumber(),
             'address' => fake()->address(),
+            'activity' => fake()->randomElement(['Services', 'Commerce', 'Santé', 'Technologie', 'BTP', 'Finance']),
+            'country' => fake()->country(),
+            'city' => fake()->city(),
             'storage_limit' => 5_368_709_120,
             'status' => 'active',
         ];

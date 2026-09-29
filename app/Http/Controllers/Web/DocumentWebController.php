@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Enums\FolderType;
 use App\Enums\WorkflowStatus;
+use App\Exceptions\SubscriptionLimitExceededException;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Category;
@@ -19,6 +20,7 @@ use App\Models\Workflow;
 use App\Models\WorkflowInstance;
 use App\Services\AccessControlService;
 use App\Services\AuditService;
+use App\Services\BillingService;
 use App\Services\DocumentMetadataService;
 use App\Services\DocumentService;
 use App\Services\OcrService;
@@ -39,8 +41,11 @@ class DocumentWebController extends Controller
         protected AccessControlService $aclService,
         protected AuditService $auditService,
         protected DocumentMetadataService $metadataService,
-        protected PreviewService $previewService
-    ) {}
+        protected PreviewService $previewService,
+        protected ?BillingService $billingService = null
+    ) {
+        $this->billingService = $this->billingService ?? app(BillingService::class);
+    }
 
     /**
      * Display a listing of accessible documents.
@@ -340,6 +345,13 @@ class DocumentWebController extends Controller
             'metadata' => ['nullable', 'array'],
         ]);
 
+        $file = $request->file('file');
+        try {
+            $this->billingService->assertCanAddStorage($file->getSize(), $user->organization_id);
+        } catch (SubscriptionLimitExceededException $e) {
+            return back()->withErrors(['limit' => $e->getMessage()])->with('error', $e->getMessage());
+        }
+
         $folderId = $request->input('folder_id');
         $docTypeId = $request->input('document_type_id');
         $docTypeFolder = null;
@@ -606,9 +618,16 @@ class DocumentWebController extends Controller
             'change_notes' => ['nullable', 'string', 'max:500'],
         ]);
 
+        $file = $request->file('file');
+        try {
+            $this->billingService->assertCanAddStorage($file->getSize(), $document->organization_id);
+        } catch (SubscriptionLimitExceededException $e) {
+            return back()->withErrors(['limit' => $e->getMessage()])->with('error', $e->getMessage());
+        }
+
         $this->documentService->uploadNewVersion(
             $document,
-            $request->file('file'),
+            $file,
             $request->user(),
             $request->input('change_notes')
         );
@@ -638,6 +657,12 @@ class DocumentWebController extends Controller
     public function retryOcr(Request $request, Document $document): RedirectResponse
     {
         Gate::authorize('update', $document);
+
+        try {
+            $this->billingService->assertCanProcessOcr(1, $document->organization_id);
+        } catch (SubscriptionLimitExceededException $e) {
+            return back()->withErrors(['limit' => $e->getMessage()])->with('error', $e->getMessage());
+        }
 
         $version = null;
         if ($request->filled('version_id')) {

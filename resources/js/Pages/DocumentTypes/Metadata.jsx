@@ -164,7 +164,6 @@ export default function DocumentTypeMetadata({
                         </Button>
                     </div>
                 </div>
-
                 {/* Info box */}
                 <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-start gap-3">
                     <Sliders className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />

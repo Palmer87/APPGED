@@ -136,6 +136,28 @@ class DashboardService
             'recent_activity' => $recentActivity,
             'charts' => $charts,
             'tasks' => $tasks,
+            'billing' => (function () use ($user) {
+                if (! $user->organization) {
+                    return null;
+                }
+                $billingService = app(BillingService::class);
+                $subscription = $billingService->getCurrentSubscription($user->organization);
+                $usage = $billingService->getUsage($user->organization);
+
+                return [
+                    'plan_name' => $subscription?->plan?->name ?? 'Essentiel',
+                    'plan_slug' => $subscription?->plan?->slug ?? 'essential',
+                    'status' => $subscription?->status ?? 'trialing',
+                    'is_trial' => $subscription ? $subscription->isTrial() : true,
+                    'is_expired' => $subscription ? $subscription->isExpired() : false,
+                    'trial_days_remaining' => $subscription ? $subscription->trialDaysRemaining() : 14,
+                    'trial_ends_at' => $subscription?->trial_ends_at?->format('d/m/Y'),
+                    'current_period_ends_at' => $subscription?->current_period_ends_at?->format('d/m/Y'),
+                    'usage' => $usage,
+                    'warnings' => $usage['warnings'] ?? [],
+                    'is_any_exceeded' => $usage['is_any_exceeded'] ?? false,
+                ];
+            })(),
         ];
     }
 

@@ -58,7 +58,7 @@ export default function Welcome() {
 
             {/* Top Navigation Bar */}
             <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24 h-20 flex items-center justify-between">
                     {/* Brand Logo */}
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center gap-2.5 group">
@@ -150,7 +150,7 @@ export default function Welcome() {
                                     Se connecter
                                 </Link>
                                 <Link
-                                    href="/login"
+                                    href="/register/organization"
                                     className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2.5 rounded-full shadow-sm hover:shadow transition group"
                                 >
                                     <span>Commencer gratuitement</span>
@@ -235,7 +235,7 @@ export default function Welcome() {
                                         Se connecter
                                     </Link>
                                     <Link
-                                        href="/login"
+                                        href="/register/organization"
                                         className="w-full text-center bg-blue-600 text-white font-semibold py-3 rounded-xl shadow-sm"
                                     >
                                         Commencer gratuitement →
@@ -249,7 +249,7 @@ export default function Welcome() {
 
             {/* HERO SECTION */}
             <section className="relative pt-10 pb-20 md:pt-16 md:pb-28 overflow-hidden bg-gradient-to-b from-blue-50/30 via-white to-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
                         
                         {/* Hero Left Content */}
@@ -268,14 +268,14 @@ export default function Welcome() {
                             </h1>
 
                             {/* Subtitle */}
-                            <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl">
+                            <p className="text-base sm:text-lg text-slate-600 leading-relaxed mb-8 max-w-xl 2xl:max-w-2xl">
                                 GEDAPP est la solution de gestion électronique de documents pensée pour les entreprises modernes. Centralisez, organisez, recherchez et partagez vos documents en toute sécurité.
                             </p>
 
                             {/* CTAs */}
                             <div className="flex flex-wrap items-center gap-4 mb-8">
                                 <Link
-                                    href={user ? "/dashboard" : "/login"}
+                                    href={user ? "/dashboard" : "/register/organization"}
                                     className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-7 py-3.5 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200 group text-sm sm:text-base"
                                 >
                                     <span>Commencer gratuitement</span>
@@ -353,7 +353,7 @@ export default function Welcome() {
 
             {/* 5 PILLARS / KEY BENEFITS ROW */}
             <section id="fonctionnalites" className="py-14 border-y border-slate-100 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-6">
                         
                         {/* 1. Organisation */}
@@ -427,7 +427,7 @@ export default function Welcome() {
 
             {/* VALUE PROPOSITION (MIDDLE SECTION WITH PHOTO) */}
             <section id="a-propos" className="py-20 lg:py-24 bg-slate-50/70">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
                         
                         {/* Text description */}
@@ -501,7 +501,7 @@ export default function Welcome() {
 
             {/* DARK STATS BAR */}
             <section className="bg-[#0B1120] text-white py-14 border-y border-slate-800">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center sm:text-left">
                         
                         {/* Stat 1 */}
@@ -554,7 +554,7 @@ export default function Welcome() {
 
             {/* SECTOR SOLUTIONS ("UNE SOLUTION POUR CHAQUE MÉTIER") */}
             <section id="metiers" className="py-20 lg:py-24 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     
                     {/* Header */}
                     <div className="text-center max-w-3xl mx-auto mb-16">
@@ -703,7 +703,7 @@ export default function Welcome() {
 
             {/* TESTIMONIALS SECTION ("CE QUE NOS CLIENTS DISENT DE GEDAPP") */}
             <section id="temoignages" className="py-20 lg:py-24 bg-slate-50/70 border-t border-slate-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     
                     {/* Header */}
                     <div className="text-center max-w-3xl mx-auto mb-16">
@@ -831,7 +831,7 @@ export default function Welcome() {
 
             {/* PRICING SECTION ("CHOISISSEZ LE PLAN QUI VOUS CORRESPOND") */}
             <section id="tarifs" className="py-20 lg:py-24 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     
                     {/* Header */}
                     <div className="text-center max-w-3xl mx-auto mb-12">
@@ -877,7 +877,7 @@ export default function Welcome() {
                     </div>
 
                     {/* Pricing Cards */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch max-w-6xl mx-auto">
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch w-full mx-auto">
                         
                         {/* 1. Essentiel */}
                         <div className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-lg transition">
@@ -913,7 +913,7 @@ export default function Welcome() {
                             </div>
 
                             <Link
-                                href="/login"
+                                href="/register/organization"
                                 className="w-full text-center py-3 rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold text-sm transition"
                             >
                                 Essayer gratuitement
@@ -963,7 +963,7 @@ export default function Welcome() {
                             </div>
 
                             <Link
-                                href="/login"
+                                href="/register/organization"
                                 className="w-full text-center py-3.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-500/25 transition"
                             >
                                 Essayer gratuitement
@@ -1020,7 +1020,7 @@ export default function Welcome() {
 
             {/* CALL TO ACTION BANNER */}
             <section className="py-16 bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#071329] via-[#0b244d] to-[#091b38] px-8 py-14 sm:px-14 sm:py-16 text-white shadow-2xl">
                         {/* Background radial glow */}
                         <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-96 h-96 bg-blue-500/20 blur-3xl pointer-events-none rounded-full"></div>
@@ -1037,7 +1037,7 @@ export default function Welcome() {
 
                             <div className="flex flex-col items-center sm:items-end gap-2 shrink-0">
                                 <Link
-                                    href={user ? "/dashboard" : "/login"}
+                                    href={user ? "/dashboard" : "/register/organization"}
                                     className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-blue-900 font-bold px-7 py-3.5 rounded-full shadow-lg transition duration-200 group text-sm sm:text-base"
                                 >
                                     <span>Commencer gratuitement</span>
@@ -1054,7 +1054,7 @@ export default function Welcome() {
 
             {/* FOOTER */}
             <footer id="contact" className="bg-[#0B1120] text-slate-400 pt-16 pb-12 border-t border-slate-800 text-xs sm:text-sm">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="w-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 mb-12">
                         
                         {/* Col 1: Brand */}
@@ -1206,7 +1206,7 @@ export default function Welcome() {
                                     Indexation automatique par OCR, formulaires métiers et workflows d'approbation simplifiés.
                                 </p>
                                 <Link
-                                    href="/login"
+                                    href={user ? "/dashboard" : "/register/organization"}
                                     className="bg-white text-blue-900 font-bold px-6 py-2.5 rounded-full text-xs shadow hover:bg-slate-100 transition"
                                 >
                                     Essayer directement l'application →
