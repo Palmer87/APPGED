@@ -34,6 +34,9 @@ class DocumentVersionTest extends TestCase
     {
         parent::setUp();
 
+        Storage::fake('private');
+        Storage::fake('r2');
+
         $this->org = Organization::factory()->create();
         $this->user = User::factory()->for($this->org)->create();
         $this->service = new DocumentService;

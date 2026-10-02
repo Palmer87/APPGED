@@ -10,6 +10,7 @@ import {
     Shield,
     ShieldPlus,
     Search,
+    Eye,
     Edit2,
     Trash2,
     Users,
@@ -132,7 +133,12 @@ export default function RolesIndex({ roles, filters = {}, can = {}, auth }) {
                                                         <div className={`p-2 rounded-lg shrink-0 ${system ? 'bg-purple-100 text-purple-700' : 'bg-indigo-50 text-indigo-600'}`}>
                                                             <Shield className="w-4 h-4" />
                                                         </div>
-                                                        <span>{r.name}</span>
+                                                        <Link
+                                                            href={`/roles/${r.id}`}
+                                                            className="hover:text-indigo-600 transition"
+                                                        >
+                                                            {r.name}
+                                                        </Link>
                                                     </div>
                                                 </td>
 
@@ -171,6 +177,14 @@ export default function RolesIndex({ roles, filters = {}, can = {}, auth }) {
                                                 {/* Actions */}
                                                 <td className="py-3.5 px-4 text-right">
                                                     <div className="flex items-center justify-end gap-1.5">
+                                                        <Link
+                                                            href={`/roles/${r.id}`}
+                                                            title="Consulter le rôle"
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-slate-100 transition"
+                                                        >
+                                                            <Eye className="w-4 h-4" />
+                                                        </Link>
+
                                                         <Link
                                                             href={`/roles/${r.id}/edit`}
                                                             title="Configurer les permissions"

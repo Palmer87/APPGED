@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import RegistrationSteps from '../../Components/RegistrationSteps';
 
-export default function RegisterOrganization({ organization = {} }) {
+export default function RegisterOrganization({ organization = {}, isInscriptionFlow = false }) {
     const { flash } = usePage().props;
 
     const { data, setData, post, processing, errors } = useForm({
@@ -27,7 +27,8 @@ export default function RegisterOrganization({ organization = {} }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post('/register/organization');
+        const targetUrl = isInscriptionFlow ? '/inscription/organisation' : '/register/organization';
+        post(targetUrl);
     };
 
     return (

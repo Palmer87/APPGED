@@ -203,7 +203,7 @@ export default function PricingIndex({ plans = [] }) {
 
                         <div className="mt-8 pt-6 border-t border-slate-800">
                             <Link
-                                href="/login"
+                                href="/inscription"
                                 className="w-full py-3 px-4 rounded-xl text-xs font-bold text-center block bg-slate-800 hover:bg-slate-700 text-white transition border border-slate-700"
                             >
                                 Commencer gratuitement (14 jours)
@@ -290,7 +290,7 @@ export default function PricingIndex({ plans = [] }) {
 
                         <div className="mt-8 pt-6 border-t border-blue-900/50">
                             <Link
-                                href="/login"
+                                href="/inscription"
                                 className="w-full py-3 px-4 rounded-xl text-xs font-bold text-center block bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition duration-150"
                             >
                                 Commencer gratuitement (14 jours)
@@ -357,12 +357,12 @@ export default function PricingIndex({ plans = [] }) {
                         </div>
 
                         <div className="mt-8 pt-6 border-t border-slate-800">
-                            <a
-                                href="mailto:commercial@gedapp.com?subject=Demande%20d'offre%20Entreprise%20GEDAPP"
+                            <Link
+                                href="/enterprise"
                                 className="w-full py-3 px-4 rounded-xl text-xs font-bold text-center block bg-slate-800 hover:bg-slate-700 text-white transition border border-slate-700"
                             >
-                                Contacter l'équipe commerciale
-                            </a>
+                                Demander une démonstration
+                            </Link>
                         </div>
                     </div>
                 </div>

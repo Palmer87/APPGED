@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Plan;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,7 +17,7 @@ class PricingWebController extends Controller
     public function index(Request $request): Response
     {
         if (Plan::where('is_active', true)->count() === 0) {
-            (new \Database\Seeders\PlanSeeder())->run();
+            (new PlanSeeder)->run();
         }
 
         $plans = Plan::where('is_active', true)

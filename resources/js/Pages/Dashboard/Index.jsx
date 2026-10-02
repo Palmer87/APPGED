@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import AuthenticatedLayout from '../../Layouts/AuthenticatedLayout';
+import OnboardingChecklist from '../../Components/OnboardingChecklist';
 import {
     Folder,
     Users,
@@ -44,6 +45,7 @@ export default function DashboardIndex({
     charts = {},
     tasks: initialTasks = [],
     billing = null,
+    onboarding_dismissed = false,
     flash: propsFlash = {}
 }) {
     const pageProps = usePage()?.props || {};
@@ -309,18 +311,34 @@ export default function DashboardIndex({
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                        <div className="px-3 py-2 rounded-2xl bg-slate-50 border border-slate-100 text-center">
-                            <span className="text-[10px] text-slate-400 font-medium block">Accessibles</span>
-                            <strong className="text-sm font-bold text-slate-800">{statistics?.total_documents ?? 0}</strong>
-                        </div>
-                        <div className="px-3 py-2 rounded-2xl bg-slate-50 border border-slate-100 text-center">
-                            <span className="text-[10px] text-slate-400 font-medium block">Récents</span>
-                            <strong className="text-sm font-bold text-blue-600">{recent_documents?.length ?? 0}</strong>
-                        </div>
-                        <div className="px-3 py-2 rounded-2xl bg-amber-50 border border-amber-100 text-center">
-                            <span className="text-[10px] text-amber-700 font-medium block">À traiter</span>
-                            <strong className="text-sm font-bold text-amber-800">{workflows?.pending_my_action?.length ?? 0}</strong>
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 shrink-0">
+                        <Link
+                            href="/documents/create"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95"
+                        >
+                            <Upload className="w-4 h-4" />
+                            <span>Importer un document</span>
+                        </Link>
+                        <Link
+                            href="/search"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold border border-slate-200/80 transition-all active:scale-95"
+                        >
+                            <Search className="w-4 h-4" />
+                            <span>Rechercher</span>
+                        </Link>
+                        <div className="hidden sm:flex items-center gap-2 pl-2 border-l border-slate-200">
+                            <div className="px-3 py-2 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                                <span className="text-[10px] text-slate-400 font-medium block">Accessibles</span>
+                                <strong className="text-sm font-bold text-slate-800">{statistics?.total_documents ?? 0}</strong>
+                            </div>
+                            <div className="px-3 py-2 rounded-2xl bg-slate-50 border border-slate-100 text-center">
+                                <span className="text-[10px] text-slate-400 font-medium block">Récents</span>
+                                <strong className="text-sm font-bold text-blue-600">{recent_documents?.length ?? 0}</strong>
+                            </div>
+                            <div className="px-3 py-2 rounded-2xl bg-amber-50 border border-amber-100 text-center">
+                                <span className="text-[10px] text-amber-700 font-medium block">À traiter</span>
+                                <strong className="text-sm font-bold text-amber-800">{workflows?.pending_my_action?.length ?? 0}</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -375,6 +393,11 @@ export default function DashboardIndex({
                             </div>
                         </div>
                     </div>
+                )}
+
+                {/* SaaS Onboarding Checklist for new organizations */}
+                {(!onboarding_dismissed || flash?.welcome_onboarding) && (
+                    <OnboardingChecklist initialDismissed={onboarding_dismissed && !flash?.welcome_onboarding} />
                 )}
 
                 {/* Trial Alert Banner if currently trialing */}

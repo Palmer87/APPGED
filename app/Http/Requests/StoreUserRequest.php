@@ -2,7 +2,11 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Direction;
+use App\Models\Service;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 class StoreUserRequest extends FormRequest
 {
@@ -16,6 +20,8 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        $orgId = $this->user()?->organization_id;
+
         return [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -24,16 +30,77 @@ class StoreUserRequest extends FormRequest
             'job_title' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'role' => ['required', 'string'],
-            'direction_id' => ['nullable', 'integer', 'exists:directions,id'],
-            'primary_service_id' => ['nullable', 'integer', 'exists:services,id'],
+            'direction_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('directions', 'id')->where(fn ($q) => $q->where('organization_id', $orgId)),
+            ],
+            'primary_service_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('services', 'id')->where(fn ($q) => $q->where('organization_id', $orgId)),
+            ],
             'associated_service_ids' => ['nullable', 'array'],
-            'associated_service_ids.*' => ['integer', 'exists:services,id'],
+            'associated_service_ids.*' => [
+                'integer',
+                Rule::exists('services', 'id')->where(fn ($q) => $q->where('organization_id', $orgId)),
+            ],
             'access_scope_type' => ['nullable', 'string'],
-            'access_scope_direction_id' => ['nullable', 'integer', 'exists:directions,id'],
-            'access_scope_service_id' => ['nullable', 'integer', 'exists:services,id'],
+            'access_scope_direction_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('directions', 'id')->where(fn ($q) => $q->where('organization_id', $orgId)),
+            ],
+            'access_scope_service_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('services', 'id')->where(fn ($q) => $q->where('organization_id', $orgId)),
+            ],
             'group_ids' => ['nullable', 'array'],
-            'group_ids.*' => ['integer'],
+            'group_ids.*' => [
+                'integer',
+                Rule::exists('groups', 'id')->where(fn ($q) => $q->where('organization_id', $orgId)),
+            ],
             'status' => ['required', 'in:active,inactive'],
+        ];
+    }
+
+    /**
+     * Configure after validation hooks to enforce Direction/Service consistency.
+     *
+     * @return array<int, callable>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator) {
+                $directionId = $this->input('direction_id');
+                $primaryServiceId = $this->input('primary_service_id');
+                $associatedServiceIds = $this->input('associated_service_ids', []);
+
+                if ($directionId && $primaryServiceId) {
+                    $service = Service::find($primaryServiceId);
+                    if ($service && (int) $service->direction_id !== (int) $directionId) {
+                        $validator->errors()->add(
+                            'primary_service_id',
+                            'Le service principal sélectionné n\'appartient pas à la direction choisie.'
+                        );
+                    }
+                }
+
+                if ($directionId && ! empty($associatedServiceIds)) {
+                    $invalidServices = Service::whereIn('id', $associatedServiceIds)
+                        ->where('direction_id', '!=', $directionId)
+                        ->count();
+
+                    if ($invalidServices > 0) {
+                        $validator->errors()->add(
+                            'associated_service_ids',
+                            'Un ou plusieurs services associés n\'appartiennent pas à la direction choisie.'
+                        );
+                    }
+                }
+            },
         ];
     }
 }

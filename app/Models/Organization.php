@@ -87,4 +87,24 @@ class Organization extends Model
     {
         return $this->hasMany(AccessScope::class);
     }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function supportTickets(): HasMany
+    {
+        return $this->hasMany(SupportTicket::class);
+    }
+
+    public function platformAuditLogs(): HasMany
+    {
+        return $this->hasMany(PlatformAuditLog::class);
+    }
+
+    public function isSuspended(): bool
+    {
+        return $this->status === 'suspended';
+    }
 }

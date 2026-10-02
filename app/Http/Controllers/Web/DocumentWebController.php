@@ -8,12 +8,14 @@ use App\Exceptions\SubscriptionLimitExceededException;
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
 use App\Models\Category;
+use App\Models\Direction;
 use App\Models\Document;
 use App\Models\DocumentFavorite;
 use App\Models\DocumentVersion;
 use App\Models\Folder;
 use App\Models\Group;
 use App\Models\MetadataDefinition;
+use App\Models\Service;
 use App\Models\Tag;
 use App\Models\User;
 use App\Models\Workflow;
@@ -138,7 +140,11 @@ class DocumentWebController extends Controller
 
         // Load document relations
         $document->load([
+            'direction',
+            'service',
             'documentType.parent',
+            'documentType.direction',
+            'documentType.service',
             'documentType.metadataDefinitions',
             'folder',
             'categories',
@@ -326,13 +332,62 @@ class DocumentWebController extends Controller
             ]),
         ];
 
+        $services = Service::query()
+            ->where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->with(['direction:id,name,folder_id'])
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'code' => $s->code,
+                'direction_id' => $s->direction_id,
+                'department_id' => $s->direction?->folder_id,
+                'folder_id' => $s->folder_id,
+            ]);
+
+        $directions = Direction::where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->with(['services' => fn ($q) => $q->where('is_active', true)->orderBy('name')])
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'folder_id']);
+
+        $documentTypes = Folder::where('organization_id', $user->organization_id)
+            ->where('folder_type', FolderType::DocumentType)
+            ->where('is_active', true)
+            ->with(['metadataDefinitions' => fn ($q) => $q->where('is_active', true)->orderBy('folder_metadata_definition.order')])
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($type) => [
+                'id' => $type->id,
+                'name' => $type->name,
+                'description' => $type->description,
+                'parent_id' => $type->parent_id,
+                'direction_id' => $type->direction_id ?? $type->parent?->direction_id,
+                'service_id' => $type->service_id ?? $type->parent?->service_id,
+                'metadata_definitions' => $type->metadataDefinitions->map(fn ($def) => [
+                    'id' => $def->id,
+                    'name' => $def->name,
+                    'key' => $def->key,
+                    'type' => $def->type,
+                    'is_required' => $def->pivot->is_required !== null ? (bool) $def->pivot->is_required : (bool) $def->is_required,
+                    'order' => (int) $def->pivot->order,
+                    'description' => $def->description,
+                ]),
+            ]);
+
         return Inertia::render('Documents/Create', [
             'departments' => $departments,
+            'directions' => $directions,
+            'services' => $services,
+            'documentTypes' => $documentTypes,
             'categories' => $categories,
             'tags' => $tags,
             'userContext' => $userContext,
             'preselected' => [
-                'department_id' => $request->query('department_id') ?? $user->primaryService?->direction_id,
+                'department_id' => $request->query('department_id') ?? $user->primaryService?->direction?->folder_id ?? $user->primaryService?->direction_id,
+                'direction_id' => $request->query('direction_id') ?? $user->primaryService?->direction_id,
                 'service_id' => $request->query('service_id') ?? $user->primary_service_id,
                 'document_type_id' => $request->query('document_type_id'),
             ],
@@ -507,10 +562,69 @@ class DocumentWebController extends Controller
         $currentDepartmentId = $document->documentType?->parent_id
             ?? $document->folder?->getDepartment()?->id;
 
+        $directions = Direction::where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->with(['services' => fn ($q) => $q->where('is_active', true)->orderBy('name')])
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'folder_id']);
+
+        $services = Service::query()
+            ->where('organization_id', $user->organization_id)
+            ->where('is_active', true)
+            ->with(['direction:id,name,folder_id'])
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'code' => $s->code,
+                'direction_id' => $s->direction_id,
+                'department_id' => $s->direction?->folder_id,
+                'folder_id' => $s->folder_id,
+            ]);
+
+        $documentTypes = Folder::where('organization_id', $user->organization_id)
+            ->where('folder_type', FolderType::DocumentType)
+            ->where('is_active', true)
+            ->with(['metadataDefinitions' => fn ($q) => $q->where('is_active', true)->orderBy('folder_metadata_definition.order')])
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($type) => [
+                'id' => $type->id,
+                'name' => $type->name,
+                'description' => $type->description,
+                'parent_id' => $type->parent_id,
+                'direction_id' => $type->direction_id ?? $type->parent?->direction_id,
+                'service_id' => $type->service_id ?? $type->parent?->service_id,
+                'metadata_definitions' => $type->metadataDefinitions->map(fn ($def) => [
+                    'id' => $def->id,
+                    'name' => $def->name,
+                    'key' => $def->key,
+                    'type' => $def->type,
+                    'is_required' => $def->pivot->is_required !== null ? (bool) $def->pivot->is_required : (bool) $def->is_required,
+                    'order' => (int) $def->pivot->order,
+                    'description' => $def->description,
+                ]),
+            ]);
+
+        $currentDirectionId = $document->direction_id
+            ?? $document->documentType?->direction_id
+            ?? $document->folder?->direction_id
+            ?? $currentDepartmentId;
+
+        $currentServiceId = $document->service_id
+            ?? $document->documentType?->service_id
+            ?? $document->folder?->service_id;
+
         return Inertia::render('Documents/Edit', [
             'document' => $document,
             'departments' => $departments,
+            'directions' => $directions,
+            'services' => $services,
+            'documentTypes' => $documentTypes,
             'currentDepartmentId' => $currentDepartmentId,
+            'currentDirectionId' => $currentDirectionId,
+            'currentServiceId' => $currentServiceId,
             'currentMetadata' => $currentMetadata,
             'categories' => $categories,
             'tags' => $tags,

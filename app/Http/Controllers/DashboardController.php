@@ -38,6 +38,7 @@ class DashboardController extends Controller
         }
 
         $data = $this->dashboardService->getDashboardData($user, $period);
+        $data['onboarding_dismissed'] = (bool) $request->session()->get('onboarding_dismissed', false);
 
         if ($request->wantsJson() && ! $request->header('X-Inertia')) {
             return response()->json($data);

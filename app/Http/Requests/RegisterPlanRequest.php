@@ -23,7 +23,7 @@ class RegisterPlanRequest extends FormRequest
     {
         return [
             'plan' => ['required', 'string', 'in:essential,professional,enterprise'],
-            'billing_cycle' => ['required', 'string', 'in:monthly,annual'],
+            'billing_cycle' => ['required_unless:plan,enterprise', 'nullable', 'string', 'in:monthly,annual'],
         ];
     }
 

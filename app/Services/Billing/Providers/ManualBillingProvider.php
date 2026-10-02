@@ -50,6 +50,7 @@ class ManualBillingProvider implements BillingProviderInterface
             'current_period_ends_at' => $endsAt,
             'cancelled_at' => null,
             'ended_at' => null,
+            'trial_ends_at' => null,
             'auto_renew' => true,
             'provider' => $this->getName(),
             'provider_subscription_id' => 'SUB-MAN-'.strtoupper(Str::random(8)),

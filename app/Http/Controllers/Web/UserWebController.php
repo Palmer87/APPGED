@@ -12,6 +12,7 @@ use App\Models\Direction;
 use App\Models\Group;
 use App\Models\Service;
 use App\Models\User;
+use App\Services\AccessControlService;
 use App\Services\AccessScopeService;
 use App\Services\AuditService;
 use App\Services\BillingService;
@@ -32,8 +33,10 @@ class UserWebController extends Controller
         protected AuditService $auditService,
         protected OrganizationStructureService $structureService,
         protected AccessScopeService $scopeService,
+        protected ?AccessControlService $accessControlService = null,
         protected ?BillingService $billingService = null
     ) {
+        $this->accessControlService = $this->accessControlService ?? app(AccessControlService::class);
         $this->billingService = $this->billingService ?? app(BillingService::class);
     }
 
@@ -214,6 +217,14 @@ class UserWebController extends Controller
             app(PermissionRegistrar::class)->setPermissionsTeamId($authUser->organization_id);
             $user->assignRole($validated['role']);
 
+            $this->auditService->success(
+                action: 'user.role_assigned',
+                auditable: $user,
+                newValues: ['role' => $validated['role']],
+                user: $authUser,
+                description: "Rôle '{$validated['role']}' attribué à l'utilisateur '{$user->name}'."
+            );
+
             // Sync services
             $primaryId = $validated['primary_service_id'] ?? null;
             $associatedIds = $validated['associated_service_ids'] ?? [];
@@ -286,7 +297,7 @@ class UserWebController extends Controller
             'organization',
             'primaryService.direction',
             'services.direction',
-            'accessScopes.creator',
+            'accessScopes',
         ]);
 
         // Recent audit history for this user
@@ -296,8 +307,12 @@ class UserWebController extends Controller
             ->take(20)
             ->get();
 
+        // Compute complete effective rights (roles, services, scopes, ACLs)
+        $effectiveRights = $this->accessControlService->getEffectiveRights($user);
+
         return Inertia::render('Users/Show', [
             'user' => $user,
+            'effectiveRights' => $effectiveRights,
             'auditLogs' => $auditLogs,
             'can' => [
                 'update' => Gate::allows('update', $user),
@@ -410,7 +425,25 @@ class UserWebController extends Controller
             // Sync role in team context if provided
             if (! empty($validated['role'])) {
                 app(PermissionRegistrar::class)->setPermissionsTeamId($user->organization_id);
+                $oldRole = $user->roles->first()?->name;
                 $user->syncRoles([$validated['role']]);
+
+                if ($oldRole && $oldRole !== $validated['role']) {
+                    $this->auditService->success(
+                        action: 'user.role_removed',
+                        auditable: $user,
+                        oldValues: ['role' => $oldRole],
+                        user: $authUser,
+                        description: "Rôle '{$oldRole}' retiré pour l'utilisateur '{$user->name}'."
+                    );
+                    $this->auditService->success(
+                        action: 'user.role_assigned',
+                        auditable: $user,
+                        newValues: ['role' => $validated['role']],
+                        user: $authUser,
+                        description: "Rôle '{$validated['role']}' attribué à l'utilisateur '{$user->name}'."
+                    );
+                }
             }
 
             // Sync services
@@ -429,6 +462,17 @@ class UserWebController extends Controller
                 $user->groups()->sync($validGroupIds);
             }
         });
+
+        if ($oldValues['status'] !== $user->status) {
+            $statusAction = $user->status === 'active' ? 'user.enabled' : 'user.disabled';
+            $this->auditService->success(
+                action: $statusAction,
+                auditable: $user,
+                newValues: ['status' => $user->status],
+                user: $authUser,
+                description: "Compte utilisateur '{$user->name}' ".($user->status === 'active' ? 'activé' : 'désactivé').'.'
+            );
+        }
 
         $this->auditService->success(
             action: 'user.updated',
@@ -462,6 +506,13 @@ class UserWebController extends Controller
         $newStatus = $user->status === 'active' ? 'inactive' : 'active';
         $user->update(['status' => $newStatus]);
 
+        $statusAction = $newStatus === 'active' ? 'user.enabled' : 'user.disabled';
+        $this->auditService->success(
+            action: $statusAction,
+            auditable: $user,
+            newValues: ['status' => $newStatus],
+            description: "Statut de l'utilisateur '{$user->name}' changé en '{$newStatus}'."
+        );
         $this->auditService->success(
             action: 'user.status_updated',
             auditable: $user,

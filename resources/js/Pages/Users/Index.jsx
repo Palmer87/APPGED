@@ -22,7 +22,9 @@ import {
     Users,
     Mail,
     Briefcase,
-    Calendar
+    Calendar,
+    Phone,
+    Clock
 } from 'lucide-react';
 
 export default function UsersIndex({ users, roles = [], groups = [], directions = [], services = [], filters = {}, can = {}, auth }) {
@@ -319,6 +321,12 @@ export default function UsersIndex({ users, roles = [], groups = [], directions 
                                                                 <Mail className="w-3 h-3 shrink-0" />
                                                                 <span>{u.email}</span>
                                                             </div>
+                                                            {u.phone && (
+                                                                <div className="text-[11px] text-slate-400 flex items-center gap-1 truncate">
+                                                                    <Phone className="w-3 h-3 shrink-0" />
+                                                                    <span>{u.phone}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 </td>
@@ -364,6 +372,18 @@ export default function UsersIndex({ users, roles = [], groups = [], directions 
                                                                     {u.primary_service.direction.name}
                                                                 </span>
                                                             )}
+                                                            {u.services && u.services.length > 0 && (
+                                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                                    {u.services.map((srv) => (
+                                                                        <span
+                                                                            key={srv.id}
+                                                                            className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600 font-medium"
+                                                                        >
+                                                                            {srv.name}
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         <span className="text-[11px] text-slate-400 italic">Non assigné</span>
@@ -405,7 +425,7 @@ export default function UsersIndex({ users, roles = [], groups = [], directions 
                                                     )}
                                                 </td>
 
-                                                {/* Last login */}
+                                                {/* Last login & Creation */}
                                                 <td className="py-3.5 px-4 text-slate-500 text-[11px]">
                                                     {u.last_login_at ? (
                                                         <div className="flex items-center gap-1">
@@ -420,6 +440,11 @@ export default function UsersIndex({ users, roles = [], groups = [], directions 
                                                         </div>
                                                     ) : (
                                                         <span className="text-slate-400 italic">Jamais connecté</span>
+                                                    )}
+                                                    {u.created_at && (
+                                                        <span className="text-[10px] text-slate-400 block mt-0.5">
+                                                            Créé le {new Date(u.created_at).toLocaleDateString('fr-FR')}
+                                                        </span>
                                                     )}
                                                 </td>
 

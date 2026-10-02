@@ -56,10 +56,11 @@ class DirectionWebController extends Controller
                 'created_at' => $d->created_at?->toISOString(),
             ]);
 
+        $dummyDirection = new Direction(['organization_id' => $user->organization_id]);
         $can = [
             'create' => $user->can('create', Direction::class),
-            'update' => $user->can('create', Direction::class),
-            'delete' => $user->can('create', Direction::class),
+            'update' => $user->can('update', $dummyDirection),
+            'delete' => $user->can('delete', $dummyDirection),
         ];
 
         return Inertia::render('Directions/Index', [

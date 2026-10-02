@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Spatie\Permission\PermissionRegistrar;
@@ -38,14 +39,16 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
 
-        if ($user && $user->organization_id) {
+        $isTenantUser = $user instanceof User;
+
+        if ($isTenantUser && $user->organization_id) {
             app(PermissionRegistrar::class)->setPermissionsTeamId($user->organization_id);
         }
 
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $user ? [
+                'user' => $isTenantUser ? [
                     'id' => $user->id,
                     'first_name' => $user->first_name,
                     'last_name' => $user->last_name,
@@ -57,20 +60,32 @@ class HandleInertiaRequests extends Middleware
                     'status' => $user->status,
                     'organization_id' => $user->organization_id,
                 ] : null,
-                'organization' => $user && $user->organization ? [
+                'organization' => ($isTenantUser && $user->organization) ? [
                     'id' => $user->organization->id,
                     'name' => $user->organization->name,
                     'slug' => $user->organization->slug ?? null,
                 ] : null,
-                'roles' => $user ? $user->getRoleNames() : [],
-                'permissions' => $user ? $user->getAllPermissions()->pluck('name') : [],
-                'unread_notifications_count' => $user ? $user->unreadNotifications()->count() : 0,
+                'roles' => $isTenantUser ? $user->getRoleNames() : [],
+                'permissions' => $isTenantUser ? $user->getAllPermissions()->pluck('name') : [],
+                'unread_notifications_count' => ($isTenantUser && method_exists($user, 'unreadNotifications')) ? $user->unreadNotifications()->count() : 0,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
                 'message' => fn () => $request->session()->get('message'),
             ],
+            'platform_auth' => fn () => $request->user('platform') ? [
+                'user' => [
+                    'id' => $request->user('platform')->id,
+                    'name' => $request->user('platform')->name,
+                    'email' => $request->user('platform')->email,
+                    'role' => $request->user('platform')->role,
+                ],
+                'is_owner' => $request->user('platform')->isOwner(),
+                'is_admin' => $request->user('platform')->isAdmin(),
+                'is_support' => $request->user('platform')->isSupport(),
+                'is_billing' => $request->user('platform')->isBilling(),
+            ] : null,
             'url' => fn () => $request->getRequestUri(),
         ];
     }

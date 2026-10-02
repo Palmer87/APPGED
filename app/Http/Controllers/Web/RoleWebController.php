@@ -110,6 +110,55 @@ class RoleWebController extends Controller
     }
 
     /**
+     * Display the specified role details, assigned users, and grouped permissions.
+     */
+    public function show(Request $request, Role $role): Response
+    {
+        $authUser = $request->user();
+        app(PermissionRegistrar::class)->setPermissionsTeamId($authUser->organization_id);
+
+        Gate::authorize('view', $role);
+
+        $role->load([
+            'permissions',
+            'users' => fn ($q) => $q->select(['id', 'first_name', 'last_name', 'email', 'job_title', 'status'])->take(50),
+        ]);
+
+        $rolePermissions = $role->permissions->pluck('name')->toArray();
+        $isSuperAdminRole = $role->name === 'super-admin';
+        $grouped = $this->getGroupedPermissions();
+
+        // Mark permissions assigned to this role
+        $permissionsWithStatus = array_map(function ($group) use ($rolePermissions, $isSuperAdminRole) {
+            $group['permissions'] = array_map(function ($perm) use ($rolePermissions, $isSuperAdminRole) {
+                $perm['is_active'] = $isSuperAdminRole || in_array($perm['name'], $rolePermissions, true);
+
+                return $perm;
+            }, $group['permissions']);
+            $group['active_count'] = count(array_filter($group['permissions'], fn ($p) => $p['is_active']));
+
+            return $group;
+        }, $grouped);
+
+        return Inertia::render('Roles/Show', [
+            'role' => [
+                'id' => $role->id,
+                'name' => $role->name,
+                'team_id' => $role->team_id,
+                'users_count' => $role->users()->count(),
+                'permissions_count' => $isSuperAdminRole ? 'Toutes' : count($rolePermissions),
+            ],
+            'users' => $role->users,
+            'isSystemRole' => in_array($role->name, ['super-admin', 'admin'], true),
+            'permissionsGrouped' => $permissionsWithStatus,
+            'can' => [
+                'update' => Gate::allows('update', $role),
+                'delete' => Gate::allows('delete', $role),
+            ],
+        ]);
+    }
+
+    /**
      * Show the form for editing the specified role.
      */
     public function edit(Request $request, Role $role): Response

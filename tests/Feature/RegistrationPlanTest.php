@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Organization;
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\BillingPermissionSeeder;
@@ -195,8 +196,8 @@ class RegistrationPlanTest extends TestCase
     public function test_registration_succeeds_even_when_plans_table_initially_empty(): void
     {
         // Truncate plans to simulate empty production database
-        \App\Models\Plan::query()->delete();
-        $this->assertSame(0, \App\Models\Plan::count());
+        Plan::query()->delete();
+        $this->assertSame(0, Plan::count());
 
         $response = $this->withSession([
             'registration.organization' => $this->validOrgSession,
@@ -207,7 +208,7 @@ class RegistrationPlanTest extends TestCase
         ]);
 
         $response->assertRedirect(route('dashboard'));
-        $this->assertGreaterThan(0, \App\Models\Plan::count());
+        $this->assertGreaterThan(0, Plan::count());
         $this->assertDatabaseHas('organizations', ['name' => 'Entreprise Test CI']);
     }
 }

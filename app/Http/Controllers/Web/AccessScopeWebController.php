@@ -12,7 +12,6 @@ use App\Models\Folder;
 use App\Models\Service;
 use App\Models\User;
 use App\Services\AccessScopeService;
-use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -35,7 +34,7 @@ class AccessScopeWebController extends Controller
 
         $query = AccessScope::query()
             ->where('organization_id', $user->organization_id)
-            ->with(['user', 'creator'])
+            ->with(['user', 'direction', 'service', 'folder', 'document', 'organization'])
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('user_id')) {
@@ -53,11 +52,8 @@ class AccessScopeWebController extends Controller
             'user_email' => $s->user?->email,
             'scope_type' => $s->scope_type->value,
             'scope_type_label' => $s->scope_type->label(),
-            'scope_id' => $s->scope_id,
-            'scope_target_name' => $s->getTargetName(),
-            'permissions' => $s->permissions,
-            'granted_by_name' => $s->creator?->name,
-            'expires_at' => $s->expires_at?->toISOString(),
+            'scope_target_name' => $s->target_name,
+            'is_active' => (bool) $s->is_active,
             'created_at' => $s->created_at?->toISOString(),
         ]);
 
@@ -133,13 +129,30 @@ class AccessScopeWebController extends Controller
 
         $scopeType = AccessScopeType::from($request->validated('scope_type'));
 
-        $scope = $this->scopeService->grantScope(
+        $targets = [
+            'direction_id' => $request->validated('direction_id'),
+            'service_id' => $request->validated('service_id'),
+            'folder_id' => $request->validated('folder_id'),
+            'document_id' => $request->validated('document_id'),
+        ];
+
+        // Also support scope_id if provided by the frontend modal based on scope_type
+        if ($request->filled('scope_id')) {
+            $scopeId = (int) $request->input('scope_id');
+            match ($scopeType) {
+                AccessScopeType::Direction => $targets['direction_id'] = $scopeId,
+                AccessScopeType::Service => $targets['service_id'] = $scopeId,
+                AccessScopeType::DocumentType, AccessScopeType::Folder => $targets['folder_id'] = $scopeId,
+                AccessScopeType::Document => $targets['document_id'] = $scopeId,
+                default => null,
+            };
+        }
+
+        $this->scopeService->grantScope(
             user: $targetUser,
             scopeType: $scopeType,
-            scopeId: $request->validated('scope_id'),
-            permissions: $request->validated('permissions'),
-            grantedBy: $request->user(),
-            expiresAt: $request->validated('expires_at') ? Carbon::parse($request->validated('expires_at')) : null
+            targets: array_filter($targets, fn ($val) => ! is_null($val)),
+            actor: $request->user()
         );
 
         return back()->with('success', "Périmètre d'accès accordé avec succès à {$targetUser->name}.");

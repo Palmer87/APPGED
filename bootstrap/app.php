@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Middleware\EnsureApiTeamContext;
+use App\Http\Middleware\EnsureOrganizationActive;
+use App\Http\Middleware\EnsurePlatformRole;
+use App\Http\Middleware\EnsurePlatformUser;
 use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,6 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             EnsureApiTeamContext::class,
             HandleInertiaRequests::class,
+        ]);
+
+        $middleware->alias([
+            'platform.auth' => EnsurePlatformUser::class,
+            'platform.role' => EnsurePlatformRole::class,
+            'org.active' => EnsureOrganizationActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

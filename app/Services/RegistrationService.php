@@ -6,6 +6,7 @@ use App\Models\Organization;
 use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
+use Database\Seeders\PlanSeeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -72,7 +73,7 @@ class RegistrationService
                     $plan = Plan::query()->where('slug', 'essential')->first();
                 }
                 if (! $plan) {
-                    (new \Database\Seeders\PlanSeeder())->run();
+                    (new PlanSeeder)->run();
                     $plan = Plan::query()->where('slug', $planSlug)->first()
                         ?? Plan::query()->where('slug', 'essential')->first();
                 }

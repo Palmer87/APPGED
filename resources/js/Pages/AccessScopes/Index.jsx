@@ -33,10 +33,24 @@ export default function AccessScopesIndex({
 
     const handleCreate = (e) => {
         e.preventDefault();
-        form.post('/access-scopes', {
+        const payload = {
+            user_id: form.data.user_id,
+            scope_type: form.data.scope_type,
+            direction_id: form.data.scope_type === 'direction' ? form.data.scope_id : null,
+            service_id: form.data.scope_type === 'service' ? form.data.scope_id : null,
+            folder_id: (form.data.scope_type === 'document_type' || form.data.scope_type === 'folder') ? form.data.scope_id : null,
+            document_id: form.data.scope_type === 'document' ? form.data.scope_id : null,
+            scope_id: form.data.scope_id || null,
+            expires_at: form.data.expires_at || null,
+        };
+
+        router.post('/access-scopes', payload, {
             onSuccess: () => {
                 setCreateModalOpen(false);
                 form.reset();
+            },
+            onError: (err) => {
+                form.setError(err);
             },
         });
     };
@@ -96,6 +110,46 @@ export default function AccessScopesIndex({
                                 Nouveau périmètre
                             </Button>
                         )}
+                    </div>
+                </div>
+
+                {/* Conceptual Access Control Pipeline */}
+                <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-5 text-white shadow-sm">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                        <div className="space-y-1">
+                            <span className="text-[10px] font-bold tracking-widest text-indigo-400 uppercase">
+                                Architecture de Contrôle d'Accès
+                            </span>
+                            <h2 className="text-sm font-semibold">
+                                Modèle de résolution des droits effectifs
+                            </h2>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 font-medium">
+                                <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                                <span>Utilisateur</span>
+                            </div>
+                            <span className="text-slate-400">→</span>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 font-medium">
+                                <span className="w-2 h-2 rounded-full bg-indigo-400"></span>
+                                <span>Rôle</span>
+                            </div>
+                            <span className="text-slate-400">→</span>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 font-medium">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                <span>Permissions <span className="text-[10px] text-slate-300 font-normal">(Quoi faire)</span></span>
+                            </div>
+                            <span className="text-slate-400">→</span>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/30 backdrop-blur-xs border border-purple-400/30 text-purple-200 font-semibold shadow-xs">
+                                <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                                <span>Périmètre <span className="text-[10px] text-purple-300 font-normal">(Où l'exercer)</span></span>
+                            </div>
+                            <span className="text-slate-400">→</span>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-xs border border-white/10 font-medium">
+                                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                                <span>Ressources</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

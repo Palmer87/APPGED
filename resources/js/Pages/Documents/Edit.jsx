@@ -26,12 +26,24 @@ import {
 export default function DocumentEdit({
     document: doc,
     departments = [],
+    directions = [],
+    services = [],
+    documentTypes = [],
     currentDepartmentId,
+    currentDirectionId,
+    currentServiceId,
     currentMetadata = {},
     categories = [],
     tags = [],
 }) {
-    const [selectedDepartmentId, setSelectedDepartmentId] = useState(currentDepartmentId || '');
+    const availableDirections = useMemo(() => {
+        if (directions && directions.length > 0) return directions;
+        return departments;
+    }, [directions, departments]);
+
+    const initialDirId = currentDirectionId || currentDepartmentId || '';
+    const [selectedDepartmentId, setSelectedDepartmentId] = useState(initialDirId);
+    const [selectedServiceId, setSelectedServiceId] = useState(currentServiceId || '');
     const [selectedDocTypeId, setSelectedDocTypeId] = useState(doc.document_type_id || '');
     const [replaceFileActive, setReplaceFileActive] = useState(false);
     const [dragActive, setDragActive] = useState(false);
@@ -40,6 +52,8 @@ export default function DocumentEdit({
         _method: 'put',
         name: doc.name || '',
         description: doc.description || '',
+        direction_id: initialDirId,
+        service_id: currentServiceId || '',
         document_type_id: doc.document_type_id || '',
         metadata: { ...currentMetadata },
         file: null,
@@ -48,23 +62,62 @@ export default function DocumentEdit({
         tags: doc.tags ? doc.tags.map((t) => t.id) : [],
     });
 
-    // Resolve current department object
     const selectedDepartment = useMemo(() => {
-        return departments.find((d) => String(d.id) === String(selectedDepartmentId)) || null;
-    }, [departments, selectedDepartmentId]);
+        return availableDirections.find(
+            (d) => String(d.id) === String(selectedDepartmentId) || String(d.folder_id) === String(selectedDepartmentId)
+        ) || null;
+    }, [availableDirections, selectedDepartmentId]);
 
-    // Available document types for this department
+    const availableServices = useMemo(() => {
+        if (!selectedDepartmentId) return [];
+        return services.filter((s) => {
+            return String(s.direction_id) === String(selectedDepartment?.id) ||
+                String(s.direction_id) === String(selectedDepartmentId) ||
+                String(s.department_id) === String(selectedDepartment?.folder_id) ||
+                String(s.department_id) === String(selectedDepartmentId);
+        });
+    }, [services, selectedDepartment, selectedDepartmentId]);
+
+    const selectedService = useMemo(() => {
+        return services.find((s) => String(s.id) === String(selectedServiceId)) || null;
+    }, [services, selectedServiceId]);
+
     const availableDocTypes = useMemo(() => {
         if (!selectedDepartment) return [];
-        return selectedDepartment.document_types || [];
-    }, [selectedDepartment]);
 
-    // Resolve current document type object
+        if (documentTypes && documentTypes.length > 0) {
+            return documentTypes.filter((t) => {
+                const dirId = selectedDepartment.id;
+                const dirFolderId = selectedDepartment.folder_id;
+                const svcId = selectedService?.id;
+                const svcFolderId = selectedService?.folder_id;
+
+                if (svcId) {
+                    return (
+                        String(t.service_id) === String(svcId) ||
+                        String(t.parent_id) === String(svcFolderId) ||
+                        (String(t.direction_id) === String(dirId) && !t.service_id) ||
+                        (String(t.parent_id) === String(dirFolderId) && !t.service_id)
+                    );
+                }
+
+                const matchesDir = String(t.direction_id) === String(dirId) ||
+                    String(t.parent_id) === String(dirFolderId);
+                const matchesAnyChildService = availableServices.some(
+                    (s) => String(s.id) === String(t.service_id) || String(s.folder_id) === String(t.parent_id)
+                );
+
+                return matchesDir || matchesAnyChildService;
+            });
+        }
+
+        return selectedDepartment.document_types || [];
+    }, [selectedDepartment, selectedService, availableServices, documentTypes]);
+
     const selectedDocType = useMemo(() => {
         return availableDocTypes.find((t) => String(t.id) === String(selectedDocTypeId)) || null;
     }, [availableDocTypes, selectedDocTypeId]);
 
-    // Metadata definitions for current document type
     const metadataDefinitions = useMemo(() => {
         if (!selectedDocType) return [];
         return selectedDocType.metadata_definitions || [];
@@ -72,9 +125,23 @@ export default function DocumentEdit({
 
     const handleDepartmentChange = (deptId) => {
         setSelectedDepartmentId(deptId);
+        setSelectedServiceId('');
         setSelectedDocTypeId('');
         setData((prev) => ({
             ...prev,
+            direction_id: deptId,
+            service_id: '',
+            document_type_id: '',
+            metadata: {},
+        }));
+    };
+
+    const handleServiceChange = (serviceId) => {
+        setSelectedServiceId(serviceId);
+        setSelectedDocTypeId('');
+        setData((prev) => ({
+            ...prev,
+            service_id: serviceId,
             document_type_id: '',
             metadata: {},
         }));
@@ -188,7 +255,7 @@ export default function DocumentEdit({
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div>
                                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
                                     <Building2 className="w-3.5 h-3.5 text-indigo-600" />
@@ -199,9 +266,33 @@ export default function DocumentEdit({
                                     value={selectedDepartmentId}
                                     onChange={(e) => handleDepartmentChange(e.target.value)}
                                     placeholder="Sélectionnez une direction..."
-                                    options={departments.map((dept) => ({
+                                    options={availableDirections.map((dept) => ({
                                         value: dept.id,
                                         label: dept.name,
+                                    }))}
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                    <Network className="w-3.5 h-3.5 text-indigo-600" />
+                                    Service
+                                </label>
+                                <Select
+                                    id="service_select"
+                                    value={selectedServiceId}
+                                    onChange={(e) => handleServiceChange(e.target.value)}
+                                    placeholder={
+                                        !selectedDepartmentId
+                                            ? '← Choisissez une direction'
+                                            : availableServices.length === 0
+                                                ? 'Aucun service'
+                                                : 'Sélectionnez un service...'
+                                    }
+                                    disabled={!selectedDepartmentId || availableServices.length === 0}
+                                    options={availableServices.map((svc) => ({
+                                        value: svc.id,
+                                        label: svc.name,
                                     }))}
                                 />
                             </div>

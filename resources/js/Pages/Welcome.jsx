@@ -84,15 +84,18 @@ export default function Welcome() {
 
                     {/* Desktop Navigation Links */}
                     <nav className="hidden lg:flex items-center gap-8 text-[14px] font-medium text-slate-600">
-                        <a href="#" className="text-blue-600 font-semibold transition-colors">
+                        <Link href="/" className="text-blue-600 font-semibold transition-colors">
                             Accueil
-                        </a>
-                        <a href="#fonctionnalites" className="hover:text-blue-600 transition-colors">
+                        </Link>
+                        <Link href="/fonctionnalites" className="hover:text-blue-600 transition-colors">
                             Fonctionnalités
-                        </a>
-                        <a href="#tarifs" className="hover:text-blue-600 transition-colors">
+                        </Link>
+                        <Link href="/tarifs" className="hover:text-blue-600 transition-colors">
                             Tarifs
-                        </a>
+                        </Link>
+                        <Link href="/enterprise" className="hover:text-blue-600 transition-colors">
+                            Enterprise
+                        </Link>
                         
                         {/* Ressources Dropdown */}
                         <div className="relative">
@@ -107,14 +110,14 @@ export default function Welcome() {
                             </button>
                             {resourcesOpen && (
                                 <div className="absolute top-full left-0 mt-3 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 p-2 z-50">
-                                    <a href="#fonctionnalites" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-blue-600 text-sm transition">
+                                    <Link href="/fonctionnalites" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-blue-600 text-sm transition">
                                         <FileText className="w-4 h-4 text-blue-600" />
-                                        <span>Documentation</span>
-                                    </a>
-                                    <a href="#metiers" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-blue-600 text-sm transition">
+                                        <span>Fonctionnalités détaillées</span>
+                                    </Link>
+                                    <Link href="/enterprise" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-blue-600 text-sm transition">
                                         <Building2 className="w-4 h-4 text-purple-600" />
-                                        <span>Guides métiers</span>
-                                    </a>
+                                        <span>Offre Enterprise</span>
+                                    </Link>
                                     <a href="#temoignages" className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl hover:bg-slate-50 text-slate-700 hover:text-blue-600 text-sm transition">
                                         <Star className="w-4 h-4 text-amber-500" />
                                         <span>Témoignages</span>
@@ -123,12 +126,9 @@ export default function Welcome() {
                             )}
                         </div>
 
-                        <a href="#metiers" className="hover:text-blue-600 transition-colors">
-                            À propos
-                        </a>
-                        <a href="#contact" className="hover:text-blue-600 transition-colors">
+                        <Link href="/contact" className="hover:text-blue-600 transition-colors">
                             Contact
-                        </a>
+                        </Link>
                     </nav>
 
                     {/* Auth / Action CTA */}
@@ -150,7 +150,7 @@ export default function Welcome() {
                                     Se connecter
                                 </Link>
                                 <Link
-                                    href="/register/organization"
+                                    href="/inscription"
                                     className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2.5 rounded-full shadow-sm hover:shadow transition group"
                                 >
                                     <span>Commencer gratuitement</span>
@@ -176,48 +176,41 @@ export default function Welcome() {
                 {/* Mobile Menu Drawer */}
                 {mobileMenuOpen && (
                     <div className="lg:hidden border-t border-slate-100 bg-white px-4 pt-3 pb-6 space-y-3 shadow-xl">
-                        <a
-                            href="#"
+                        <Link
+                            href="/"
                             onClick={() => setMobileMenuOpen(false)}
                             className="block px-3 py-2 text-base font-medium text-blue-600 bg-blue-50/60 rounded-xl"
                         >
                             Accueil
-                        </a>
-                        <a
-                            href="#fonctionnalites"
+                        </Link>
+                        <Link
+                            href="/fonctionnalites"
                             onClick={() => setMobileMenuOpen(false)}
                             className="block px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                         >
                             Fonctionnalités
-                        </a>
-                        <a
-                            href="#tarifs"
+                        </Link>
+                        <Link
+                            href="/tarifs"
                             onClick={() => setMobileMenuOpen(false)}
                             className="block px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                         >
                             Tarifs
-                        </a>
-                        <a
-                            href="#metiers"
+                        </Link>
+                        <Link
+                            href="/enterprise"
                             onClick={() => setMobileMenuOpen(false)}
                             className="block px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                         >
-                            Une solution par métier
-                        </a>
-                        <a
-                            href="#temoignages"
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="block px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
-                        >
-                            Avis clients
-                        </a>
-                        <a
-                            href="#contact"
+                            Offre Enterprise
+                        </Link>
+                        <Link
+                            href="/contact"
                             onClick={() => setMobileMenuOpen(false)}
                             className="block px-3 py-2 text-base font-medium text-slate-700 hover:bg-slate-50 rounded-xl"
                         >
                             Contact
-                        </a>
+                        </Link>
                         <div className="pt-4 border-t border-slate-100 flex flex-col gap-2">
                             {user ? (
                                 <Link
@@ -235,7 +228,7 @@ export default function Welcome() {
                                         Se connecter
                                     </Link>
                                     <Link
-                                        href="/register/organization"
+                                        href="/inscription"
                                         className="w-full text-center bg-blue-600 text-white font-semibold py-3 rounded-xl shadow-sm"
                                     >
                                         Commencer gratuitement →
@@ -275,7 +268,7 @@ export default function Welcome() {
                             {/* CTAs */}
                             <div className="flex flex-wrap items-center gap-4 mb-8">
                                 <Link
-                                    href={user ? "/dashboard" : "/register/organization"}
+                                    href={user ? "/dashboard" : "/inscription"}
                                     className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-7 py-3.5 rounded-full shadow-lg shadow-blue-500/25 hover:shadow-xl hover:shadow-blue-500/30 transition-all duration-200 group text-sm sm:text-base"
                                 >
                                     <span>Commencer gratuitement</span>
@@ -913,7 +906,7 @@ export default function Welcome() {
                             </div>
 
                             <Link
-                                href="/register/organization"
+                                href="/inscription"
                                 className="w-full text-center py-3 rounded-full border border-blue-600 text-blue-600 hover:bg-blue-50 font-semibold text-sm transition"
                             >
                                 Essayer gratuitement
@@ -963,7 +956,7 @@ export default function Welcome() {
                             </div>
 
                             <Link
-                                href="/register/organization"
+                                href="/inscription"
                                 className="w-full text-center py-3.5 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md shadow-blue-500/25 transition"
                             >
                                 Essayer gratuitement
@@ -1006,12 +999,12 @@ export default function Welcome() {
                                 </div>
                             </div>
 
-                            <a
-                                href="#contact"
+                            <Link
+                                href="/enterprise"
                                 className="w-full text-center py-3 rounded-full border border-slate-300 text-slate-800 hover:bg-slate-50 font-semibold text-sm transition"
                             >
-                                Nous contacter
-                            </a>
+                                Demander une démonstration
+                            </Link>
                         </div>
 
                     </div>
@@ -1037,7 +1030,7 @@ export default function Welcome() {
 
                             <div className="flex flex-col items-center sm:items-end gap-2 shrink-0">
                                 <Link
-                                    href={user ? "/dashboard" : "/register/organization"}
+                                    href={user ? "/dashboard" : "/inscription"}
                                     className="inline-flex items-center gap-2 bg-white hover:bg-slate-100 text-blue-900 font-bold px-7 py-3.5 rounded-full shadow-lg transition duration-200 group text-sm sm:text-base"
                                 >
                                     <span>Commencer gratuitement</span>

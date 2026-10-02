@@ -14,6 +14,7 @@ import {
     Search,
     Filter,
     Building2,
+    Network,
     FileStack,
     Calendar,
     Eye,
@@ -35,13 +36,25 @@ export default function SearchIndex({
     results,
     filters = {},
     departments = [],
+    directions = [],
+    services = [],
+    documentTypes = [],
     folders = [],
     categories = [],
     tags = [],
     userContext = {},
 }) {
-    const [departmentId, setDepartmentId] = useState(filters.department_id || '');
+    const availableDirections = useMemo(() => {
+        if (directions && directions.length > 0) return directions;
+        return departments;
+    }, [directions, departments]);
+
+    const initialDirId = filters.direction_id || filters.department_id || '';
+    const [departmentId, setDepartmentId] = useState(initialDirId);
+    const [serviceId, setServiceId] = useState(filters.service_id || '');
     const [documentTypeId, setDocumentTypeId] = useState(filters.document_type_id || '');
+    const [categoryId, setCategoryId] = useState(filters.category_id || '');
+    const [tagId, setTagId] = useState(filters.tag_id || '');
     const [q, setQ] = useState(filters.q || '');
     const [metadata, setMetadata] = useState(filters.metadata || {});
     const [createdFrom, setCreatedFrom] = useState(filters.created_from || '');
@@ -49,23 +62,58 @@ export default function SearchIndex({
     const [extension, setExtension] = useState(filters.extension || '');
     const [status, setStatus] = useState(filters.status || '');
     const [advancedOpen, setAdvancedOpen] = useState(
-        Boolean(filters.extension || filters.status || filters.created_from || filters.created_to)
+        Boolean(filters.extension || filters.status || filters.created_from || filters.created_to || filters.category_id || filters.tag_id)
     );
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
 
-    // Selected Department object
+    // Selected Direction object
     const selectedDepartment = useMemo(() => {
-        return departments.find((d) => String(d.id) === String(departmentId)) || null;
-    }, [departments, departmentId]);
+        return availableDirections.find(
+            (d) => String(d.id) === String(departmentId) || String(d.folder_id) === String(departmentId)
+        ) || null;
+    }, [availableDirections, departmentId]);
+
+    // Available services for selected direction
+    const availableServices = useMemo(() => {
+        if (!departmentId) return [];
+        return services.filter((s) => {
+            return String(s.direction_id) === String(selectedDepartment?.id) ||
+                String(s.direction_id) === String(departmentId) ||
+                String(s.department_id) === String(selectedDepartment?.folder_id) ||
+                String(s.department_id) === String(departmentId);
+        });
+    }, [services, selectedDepartment, departmentId]);
+
+    const selectedService = useMemo(() => {
+        return services.find((s) => String(s.id) === String(serviceId)) || null;
+    }, [services, serviceId]);
 
     // Available Document Types
     const availableDocTypes = useMemo(() => {
+        if (documentTypes && documentTypes.length > 0) {
+            return documentTypes.filter((t) => {
+                if (selectedService) {
+                    return String(t.service_id) === String(selectedService.id) ||
+                        String(t.parent_id) === String(selectedService.folder_id) ||
+                        (selectedDepartment && String(t.direction_id) === String(selectedDepartment.id) && !t.service_id) ||
+                        (selectedDepartment && String(t.parent_id) === String(selectedDepartment.folder_id) && !t.service_id);
+                }
+                if (selectedDepartment) {
+                    const matchesDir = String(t.direction_id) === String(selectedDepartment.id) ||
+                        String(t.parent_id) === String(selectedDepartment.folder_id);
+                    const matchesChildService = availableServices.some(
+                        (s) => String(s.id) === String(t.service_id) || String(s.folder_id) === String(t.parent_id)
+                    );
+                    return matchesDir || matchesChildService;
+                }
+                return true;
+            });
+        }
         if (!selectedDepartment) {
-            // Flatten all document types if no department selected
             return departments.flatMap((d) => d.document_types || []);
         }
         return selectedDepartment.document_types || [];
-    }, [selectedDepartment, departments]);
+    }, [selectedDepartment, selectedService, availableServices, documentTypes, departments]);
 
     // Selected Document Type object
     const selectedDocType = useMemo(() => {
@@ -80,6 +128,13 @@ export default function SearchIndex({
 
     const handleDepartmentChange = (val) => {
         setDepartmentId(val);
+        setServiceId('');
+        setDocumentTypeId('');
+        setMetadata({});
+    };
+
+    const handleServiceChange = (val) => {
+        setServiceId(val);
         setDocumentTypeId('');
         setMetadata({});
     };
@@ -111,8 +166,12 @@ export default function SearchIndex({
             '/search',
             {
                 q: q.trim() || undefined,
+                direction_id: departmentId || undefined,
                 department_id: departmentId || undefined,
+                service_id: serviceId || undefined,
                 document_type_id: documentTypeId || undefined,
+                category_id: categoryId || undefined,
+                tag_id: tagId || undefined,
                 metadata: Object.keys(cleanMetadata).length > 0 ? cleanMetadata : undefined,
                 created_from: createdFrom || undefined,
                 created_to: createdTo || undefined,
@@ -125,7 +184,10 @@ export default function SearchIndex({
 
     const handleReset = () => {
         setDepartmentId('');
+        setServiceId('');
         setDocumentTypeId('');
+        setCategoryId('');
+        setTagId('');
         setQ('');
         setMetadata({});
         setCreatedFrom('');
@@ -200,8 +262,8 @@ export default function SearchIndex({
 
                 {/* Search Form Card */}
                 <form onSubmit={handleSearch} className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-5">
-                    {/* Primary Row: Direction & Type Documentaire */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Primary Row: Direction, Service, Type Documentaire, Recherche */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
                                 <Building2 className="w-3.5 h-3.5 text-indigo-600" />
@@ -212,7 +274,28 @@ export default function SearchIndex({
                                 value={departmentId}
                                 onChange={(e) => handleDepartmentChange(e.target.value)}
                                 placeholder="Toutes les directions"
-                                options={departments.map((d) => ({ value: d.id, label: d.name }))}
+                                options={availableDirections.map((d) => ({ value: d.id, label: d.name }))}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1.5">
+                                <Network className="w-3.5 h-3.5 text-indigo-600" />
+                                Service
+                            </label>
+                            <Select
+                                id="search_service"
+                                value={serviceId}
+                                onChange={(e) => handleServiceChange(e.target.value)}
+                                placeholder={
+                                    !departmentId
+                                        ? '← Choisissez une direction'
+                                        : availableServices.length === 0
+                                            ? 'Aucun service'
+                                            : 'Tous les services'
+                                }
+                                disabled={!departmentId || availableServices.length === 0}
+                                options={availableServices.map((s) => ({ value: s.id, label: s.name }))}
                             />
                         </div>
 
@@ -280,14 +363,14 @@ export default function SearchIndex({
                             className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition"
                         >
                             <SlidersHorizontal className="w-3.5 h-3.5" />
-                            <span>Filtres avancés (Dates, Format, Statut)</span>
+                            <span>Filtres avancés (Dates, Format, Statut, Catégories, Tags)</span>
                             {advancedOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                         </button>
 
                         {advancedOpen && (
-                            <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 mb-1">Date début (Création)</label>
+                                    <label className="block text-xs font-medium text-slate-600 mb-1">Date début</label>
                                     <Input
                                         type="date"
                                         value={createdFrom}
@@ -296,7 +379,7 @@ export default function SearchIndex({
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 mb-1">Date fin (Création)</label>
+                                    <label className="block text-xs font-medium text-slate-600 mb-1">Date fin</label>
                                     <Input
                                         type="date"
                                         value={createdTo}
@@ -305,11 +388,11 @@ export default function SearchIndex({
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-medium text-slate-600 mb-1">Format de fichier</label>
+                                    <label className="block text-xs font-medium text-slate-600 mb-1">Format</label>
                                     <Select
                                         value={extension}
                                         onChange={(e) => setExtension(e.target.value)}
-                                        placeholder="Tous les formats"
+                                        placeholder="Tous"
                                         options={[
                                             { value: 'pdf', label: 'PDF' },
                                             { value: 'docx', label: 'Word (DOCX)' },
@@ -325,12 +408,32 @@ export default function SearchIndex({
                                     <Select
                                         value={status}
                                         onChange={(e) => setStatus(e.target.value)}
-                                        placeholder="Tous les statuts"
+                                        placeholder="Tous"
                                         options={[
                                             { value: 'active', label: 'Actif' },
                                             { value: 'draft', label: 'Brouillon' },
                                             { value: 'archived', label: 'Archivé' },
                                         ]}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-1">Catégorie</label>
+                                    <Select
+                                        value={categoryId}
+                                        onChange={(e) => setCategoryId(e.target.value)}
+                                        placeholder="Toutes"
+                                        options={categories.map((c) => ({ value: c.id, label: c.name }))}
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-600 mb-1">Tag</label>
+                                    <Select
+                                        value={tagId}
+                                        onChange={(e) => setTagId(e.target.value)}
+                                        placeholder="Tous"
+                                        options={tags.map((t) => ({ value: t.id, label: t.name }))}
                                     />
                                 </div>
                             </div>

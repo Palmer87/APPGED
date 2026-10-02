@@ -47,12 +47,20 @@ export default function UsersEdit({ user, roles = [], groups = [], directions = 
             ...form.data,
             direction_id: dirId,
             primary_service_id: '',
+            associated_service_ids: [],
         });
     };
 
     const handlePrimaryServiceChange = (e) => {
         const srvId = e.target.value;
-        form.setData('primary_service_id', srvId);
+        const filteredAssociated = (form.data.associated_service_ids || []).filter(
+            (id) => String(id) !== String(srvId)
+        );
+        form.setData({
+            ...form.data,
+            primary_service_id: srvId,
+            associated_service_ids: filteredAssociated,
+        });
     };
 
     const toggleAssociatedService = (srvId) => {
@@ -242,13 +250,13 @@ export default function UsersEdit({ user, roles = [], groups = [], directions = 
                         </div>
 
                         {/* Services associés */}
-                        {services.length > 0 && (
+                        {availableServices.length > 0 && (
                             <div className="pt-2">
                                 <label className="block text-xs font-semibold text-slate-700 mb-2">
-                                    Services associés
+                                    Services associés (optionnel, rattachés à la direction)
                                 </label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                                    {services
+                                    {availableServices
                                         .filter((s) => String(s.id) !== String(form.data.primary_service_id))
                                         .map((srv) => {
                                             const isSelected = form.data.associated_service_ids.includes(srv.id);
@@ -274,6 +282,9 @@ export default function UsersEdit({ user, roles = [], groups = [], directions = 
                                             );
                                         })}
                                 </div>
+                                {form.errors.associated_service_ids && (
+                                    <p className="text-[11px] text-rose-500 mt-1">{form.errors.associated_service_ids}</p>
+                                )}
                             </div>
                         )}
                     </div>

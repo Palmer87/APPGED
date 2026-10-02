@@ -28,7 +28,9 @@ import {
     ArrowRight,
     CreditCard,
     Network,
-    KeyRound
+    KeyRound,
+    Archive,
+    History
 } from 'lucide-react';
 import Toast from '../Components/Toast';
 
@@ -66,7 +68,8 @@ export default function AuthenticatedLayout({ children, title }) {
         { name: 'Partages', href: '/shares', icon: Share2, current: isUrl('/shares') },
         { name: 'Documents récents', href: '/recent', icon: Clock, current: isUrl('/recent') },
         { name: 'Workflows', href: '/workflows', icon: GitBranch, current: isUrl('/workflows'), badge: 3 },
-        { name: 'Corbeille', href: '/documents/trash', icon: Trash2, current: pageUrl.includes('/trash') },
+        { name: 'Archives', href: '/documents/archived', icon: Archive, current: isUrl('/documents/archived') },
+        { name: 'Corbeille', href: '/documents/trash', icon: Trash2, current: isUrl('/documents/trash') },
     ];
 
     const adminItems = [
@@ -78,6 +81,11 @@ export default function AuthenticatedLayout({ children, title }) {
         { name: 'Rôles & permissions', href: '/roles', icon: Shield, current: isUrl('/roles') },
         { name: 'Abonnement', href: '/settings/subscription', icon: CreditCard, current: isUrl('/settings/subscription') },
         { name: 'Paramètres', href: '/settings', icon: Settings, current: isUrl('/settings') },
+    ];
+
+    const systemItems = [
+        { name: 'Notifications', href: '/notifications', icon: Bell, current: isUrl('/notifications'), badge: unreadCount > 0 ? unreadCount : null },
+        { name: 'Journal d\'audit', href: '/audit-logs', icon: History, current: isUrl('/audit-logs') },
     ];
 
     const renderSidebarContent = () => (
@@ -161,6 +169,42 @@ export default function AuthenticatedLayout({ children, title }) {
                                             <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-400'}`} />
                                             <span>{item.name}</span>
                                         </div>
+                                    </Link>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+
+                {/* Système Section */}
+                <div>
+                    <h3 className="px-3.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                        SYSTÈME
+                    </h3>
+                    <ul className="space-y-1.5">
+                        {systemItems.map((item) => {
+                            const Icon = item.icon;
+                            const active = item.current;
+                            return (
+                                <li key={item.name}>
+                                    <Link
+                                        href={item.href}
+                                        onClick={() => setSidebarOpen(false)}
+                                        className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                                            active
+                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                                                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Icon className={`w-4 h-4 shrink-0 ${active ? 'text-white' : 'text-slate-400'}`} />
+                                            <span>{item.name}</span>
+                                        </div>
+                                        {item.badge && (
+                                            <span className="w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold bg-blue-500 text-white shrink-0">
+                                                {item.badge}
+                                            </span>
+                                        )}
                                     </Link>
                                 </li>
                             );

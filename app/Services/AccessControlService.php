@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\PermissionRegistrar;
 
 class AccessControlService
 {
@@ -623,5 +624,145 @@ class AccessControlService
                 }
             }
         });
+    }
+
+    /**
+     * Compute and explain the effective rights of a user across all dimensions:
+     * - Super-admin status
+     * - Role permissions (grouped by domain)
+     * - Service & Direction access
+     * - Access scopes (Perimeters)
+     * - Direct ACLs (Folders & Documents)
+     * - Group-inherited access
+     *
+     * @return array<string, mixed>
+     */
+    public function getEffectiveRights(User $user): array
+    {
+        if ($user->organization_id) {
+            app(PermissionRegistrar::class)->setPermissionsTeamId($user->organization_id);
+        }
+
+        $isSuperAdmin = $user->hasRole('super-admin');
+        $isAdmin = $user->hasRole('admin');
+
+        // 1. Roles and their permissions
+        $rolesData = $user->roles->map(function ($role) {
+            return [
+                'id' => $role->id,
+                'name' => $role->name,
+                'permissions_count' => $role->permissions->count(),
+                'permissions' => $role->permissions->pluck('name')->toArray(),
+            ];
+        });
+
+        // 2. All Spatie permissions
+        $allPermissions = $isSuperAdmin
+            ? ['*']
+            : $user->getAllPermissions()->pluck('name')->unique()->values()->toArray();
+
+        // Group permissions by functional domain
+        $domainLabels = [
+            'documents' => 'Documents',
+            'folders' => 'Dossiers',
+            'users' => 'Utilisateurs',
+            'roles' => 'Rôles & Droits',
+            'groups' => 'Groupes',
+            'categories' => 'Catégories',
+            'tags' => 'Étiquettes (Tags)',
+            'metadata' => 'Métadonnées',
+            'workflows' => 'Circuits & Workflows',
+            'comments' => 'Commentaires',
+            'audit' => 'Journal d\'Audit',
+            'settings' => 'Paramètres Système',
+        ];
+
+        $groupedPermissions = [];
+        foreach ($allPermissions as $perm) {
+            if ($perm === '*') {
+                continue;
+            }
+            $parts = explode('.', $perm, 2);
+            $domain = $parts[0] ?? 'general';
+            if (! isset($groupedPermissions[$domain])) {
+                $groupedPermissions[$domain] = [
+                    'domain' => $domain,
+                    'label' => $domainLabels[$domain] ?? ucfirst($domain),
+                    'permissions' => [],
+                ];
+            }
+            $groupedPermissions[$domain]['permissions'][] = $perm;
+        }
+
+        // 3. Organization Structure (Primary & Associated Services)
+        $user->loadMissing(['primaryService.direction', 'services.direction', 'groups', 'organization']);
+        $serviceAccess = [
+            'direction' => $user->primaryService?->direction ? [
+                'id' => $user->primaryService->direction->id,
+                'name' => $user->primaryService->direction->name,
+                'code' => $user->primaryService->direction->code,
+            ] : null,
+            'primary_service' => $user->primaryService ? [
+                'id' => $user->primaryService->id,
+                'name' => $user->primaryService->name,
+                'code' => $user->primaryService->code,
+            ] : null,
+            'associated_services' => $user->services->map(fn ($s) => [
+                'id' => $s->id,
+                'name' => $s->name,
+                'code' => $s->code,
+                'direction_name' => $s->direction?->name,
+            ])->toArray(),
+        ];
+
+        // 4. Access Scopes
+        $scopes = $this->scopeService->getUserScopes($user)->map(function ($s) {
+            return [
+                'id' => $s->id,
+                'scope_type' => $s->scope_type->value,
+                'scope_label' => $s->scope_type->label(),
+                'target_name' => $s->target_name,
+                'is_active' => (bool) $s->is_active,
+                'created_at' => $s->created_at?->toISOString(),
+            ];
+        });
+
+        // 5. Direct ACLs on Folders & Documents
+        $directFolderAcls = FolderPermission::where('user_id', $user->id)
+            ->with('folder:id,name')
+            ->get()
+            ->map(fn ($fp) => [
+                'resource_id' => $fp->folder_id,
+                'resource_name' => $fp->folder?->name ?? 'Dossier #'.$fp->folder_id,
+                'permission' => $fp->permission,
+                'type' => 'folder',
+            ]);
+
+        $directDocAcls = DocumentPermission::where('user_id', $user->id)
+            ->with('document:id,title')
+            ->get()
+            ->map(fn ($dp) => [
+                'resource_id' => $dp->document_id,
+                'resource_name' => $dp->document?->title ?? 'Document #'.$dp->document_id,
+                'permission' => $dp->permission,
+                'type' => 'document',
+            ]);
+
+        return [
+            'is_super_admin' => $isSuperAdmin,
+            'is_admin' => $isAdmin,
+            'roles' => $rolesData,
+            'permissions_count' => $isSuperAdmin ? 'Total (Tous droits)' : count($allPermissions),
+            'grouped_permissions' => array_values($groupedPermissions),
+            'all_permissions' => $allPermissions,
+            'service_access' => $serviceAccess,
+            'scopes' => $scopes,
+            'groups' => $user->groups->map(fn ($g) => ['id' => $g->id, 'name' => $g->name]),
+            'direct_acls' => [
+                'folders' => $directFolderAcls,
+                'documents' => $directDocAcls,
+                'total' => $directFolderAcls->count() + $directDocAcls->count(),
+            ],
+        ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\FolderType;
+use App\Models\AccessScope;
 use App\Models\Direction;
 use App\Models\Folder;
 use App\Models\Service;
@@ -125,6 +126,15 @@ class OrganizationStructureService
     {
         return DB::transaction(function () use ($direction, $user) {
             $name = $direction->name;
+
+            // Cascade soft-delete child services cleanly
+            $services = Service::where('direction_id', $direction->id)->get();
+            foreach ($services as $service) {
+                $this->deleteService($service, $user);
+            }
+
+            // Deactivate access scopes referencing this direction
+            AccessScope::where('direction_id', $direction->id)->update(['is_active' => false]);
 
             // Soft-delete linked folder if exists
             if ($direction->folder_id) {
@@ -269,6 +279,9 @@ class OrganizationStructureService
 
             // Detach associated users
             $service->users()->detach();
+
+            // Deactivate access scopes referencing this service
+            AccessScope::where('service_id', $service->id)->update(['is_active' => false]);
 
             // Soft-delete linked folder if exists
             if ($service->folder_id) {

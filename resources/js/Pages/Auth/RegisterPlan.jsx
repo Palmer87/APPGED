@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import RegistrationSteps from '../../Components/RegistrationSteps';
 
-export default function RegisterPlan({ plans = [], organization = {}, admin = {} }) {
+export default function RegisterPlan({ plans = [], organization = {}, admin = {}, isInscriptionFlow = false }) {
     const { flash } = usePage().props;
     const [billingCycle, setBillingCycle] = useState('monthly');
     const [selectedPlan, setSelectedPlan] = useState('professional');
@@ -38,7 +38,8 @@ export default function RegisterPlan({ plans = [], organization = {}, admin = {}
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post('/register/plan');
+        const targetUrl = isInscriptionFlow ? '/inscription/plan' : '/register/plan';
+        post(targetUrl);
     };
 
     const isEnterprise = selectedPlan === 'enterprise';

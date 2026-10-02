@@ -2,7 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AccessScopeType;
 use App\Enums\FolderType;
+use App\Models\AccessScope;
 use App\Models\Direction;
 use App\Models\Document;
 use App\Models\Folder;
@@ -187,5 +189,48 @@ class OrganizationStructureTest extends TestCase
 
         $this->assertSoftDeleted('services', ['id' => $service->id]);
         $this->assertNull($user->fresh()->primary_service_id);
+    }
+
+    public function test_deleting_direction_cascades_soft_delete_to_child_services_and_access_scopes(): void
+    {
+        $direction = $this->structureService->createDirection([
+            'name' => 'Direction Logistique',
+            'code' => 'DIR_LOG',
+        ], $this->admin);
+
+        $service = $this->structureService->createService([
+            'direction_id' => $direction->id,
+            'name' => 'Transport',
+            'code' => 'TRANSP',
+        ], $this->admin);
+
+        $user = User::factory()->create(['organization_id' => $this->org->id]);
+        $this->structureService->assignUserToService($user, $service, true);
+
+        // Access scope on direction
+        $dirScope = AccessScope::create([
+            'organization_id' => $this->org->id,
+            'user_id' => $user->id,
+            'scope_type' => AccessScopeType::Direction,
+            'direction_id' => $direction->id,
+            'is_active' => true,
+        ]);
+
+        // Access scope on service
+        $svcScope = AccessScope::create([
+            'organization_id' => $this->org->id,
+            'user_id' => $user->id,
+            'scope_type' => AccessScopeType::Service,
+            'service_id' => $service->id,
+            'is_active' => true,
+        ]);
+
+        $this->structureService->deleteDirection($direction);
+
+        $this->assertSoftDeleted('directions', ['id' => $direction->id]);
+        $this->assertSoftDeleted('services', ['id' => $service->id]);
+        $this->assertNull($user->fresh()->primary_service_id);
+        $this->assertFalse((bool) $dirScope->fresh()->is_active);
+        $this->assertFalse((bool) $svcScope->fresh()->is_active);
     }
 }

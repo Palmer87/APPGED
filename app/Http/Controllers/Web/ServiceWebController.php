@@ -78,10 +78,11 @@ class ServiceWebController extends Controller
                 'primary_service_id' => $u->primary_service_id,
             ]);
 
+        $dummyService = new Service(['organization_id' => $user->organization_id]);
         $can = [
             'create' => $user->can('create', Service::class),
-            'update' => $user->can('create', Service::class),
-            'delete' => $user->can('create', Service::class),
+            'update' => $user->can('update', $dummyService),
+            'delete' => $user->can('delete', $dummyService),
         ];
 
         return Inertia::render('Services/Index', [

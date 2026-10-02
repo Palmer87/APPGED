@@ -108,12 +108,37 @@ class SearchWebController extends Controller
             'primary_direction_name' => $user->primaryService?->direction?->name,
         ];
 
+        $documentTypes = Folder::where('organization_id', $user->organization_id)
+            ->where('folder_type', FolderType::DocumentType)
+            ->where('is_active', true)
+            ->with(['metadataDefinitions' => fn ($q) => $q->where('is_active', true)->orderBy('folder_metadata_definition.order')])
+            ->orderBy('name')
+            ->get()
+            ->map(fn ($type) => [
+                'id' => $type->id,
+                'name' => $type->name,
+                'description' => $type->description,
+                'parent_id' => $type->parent_id,
+                'direction_id' => $type->direction_id ?? $type->parent?->direction_id,
+                'service_id' => $type->service_id ?? $type->parent?->service_id,
+                'metadata_definitions' => $type->metadataDefinitions->map(fn ($def) => [
+                    'id' => $def->id,
+                    'name' => $def->name,
+                    'key' => $def->key,
+                    'type' => $def->type,
+                    'is_required' => $def->pivot->is_required !== null ? (bool) $def->pivot->is_required : (bool) $def->is_required,
+                    'order' => (int) $def->pivot->order,
+                    'description' => $def->description,
+                ]),
+            ]);
+
         return Inertia::render('Search/Index', [
             'results' => $results,
             'filters' => $filters,
             'departments' => $departments,
             'directions' => $directions,
             'services' => $services,
+            'documentTypes' => $documentTypes,
             'userContext' => $userContext,
             'folders' => $folders,
             'categories' => $categories,

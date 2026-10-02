@@ -9,6 +9,8 @@ use App\Models\Service;
 use App\Models\User;
 use App\Services\AccessScopeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
 class AccessScopeTest extends TestCase
@@ -36,9 +38,19 @@ class AccessScopeTest extends TestCase
         $this->scopeService = app(AccessScopeService::class);
         $this->org = Organization::factory()->create();
 
+        $teamForeignKey = config('permission.column_names.team_foreign_key', 'organization_id');
+        app(PermissionRegistrar::class)->setPermissionsTeamId($this->org->id);
+
+        $role = Role::firstOrCreate([
+            'name' => 'admin',
+            'guard_name' => 'web',
+            $teamForeignKey => $this->org->id,
+        ]);
+
         $this->admin = User::factory()->create([
             'organization_id' => $this->org->id,
         ]);
+        $this->admin->assignRole('admin');
 
         $this->user = User::factory()->create([
             'organization_id' => $this->org->id,
@@ -111,5 +123,41 @@ class AccessScopeTest extends TestCase
 
         $this->assertDatabaseMissing('access_scopes', ['id' => $scope->id]);
         $this->assertFalse($this->scopeService->canAccess($this->user, AccessScopeType::Service, $this->compta->id));
+    }
+
+    public function test_web_store_creates_access_scope_successfully(): void
+    {
+        $response = $this->actingAs($this->admin)->post('/access-scopes', [
+            'user_id' => $this->user->id,
+            'scope_type' => 'direction',
+            'direction_id' => $this->daf->id,
+        ]);
+
+        $response->assertRedirect();
+        $this->assertDatabaseHas('access_scopes', [
+            'organization_id' => $this->org->id,
+            'user_id' => $this->user->id,
+            'scope_type' => 'direction',
+            'direction_id' => $this->daf->id,
+        ]);
+    }
+
+    public function test_web_store_validates_coherence_between_scope_type_and_target_ids(): void
+    {
+        // direction scope missing direction_id
+        $response = $this->actingAs($this->admin)->post('/access-scopes', [
+            'user_id' => $this->user->id,
+            'scope_type' => 'direction',
+        ]);
+        $response->assertSessionHasErrors(['direction_id']);
+
+        // service scope with prohibited direction_id
+        $response = $this->actingAs($this->admin)->post('/access-scopes', [
+            'user_id' => $this->user->id,
+            'scope_type' => 'service',
+            'service_id' => $this->compta->id,
+            'direction_id' => $this->daf->id,
+        ]);
+        $response->assertSessionHasErrors(['direction_id']);
     }
 }

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             TagSeeder::class,
             MetadataDefinitionSeeder::class,
             DocumentStructureSeeder::class,
+            PlatformUserSeeder::class,
         ]);
     }
 }
