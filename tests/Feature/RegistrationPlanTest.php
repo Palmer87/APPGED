@@ -191,4 +191,23 @@ class RegistrationPlanTest extends TestCase
         $response->assertRedirect('/register/plan');
         $response->assertSessionHasErrors(['plan', 'billing_cycle']);
     }
+
+    public function test_registration_succeeds_even_when_plans_table_initially_empty(): void
+    {
+        // Truncate plans to simulate empty production database
+        \App\Models\Plan::query()->delete();
+        $this->assertSame(0, \App\Models\Plan::count());
+
+        $response = $this->withSession([
+            'registration.organization' => $this->validOrgSession,
+            'registration.admin' => $this->validAdminSession,
+        ])->post('/register/plan', [
+            'plan' => 'essential',
+            'billing_cycle' => 'monthly',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+        $this->assertGreaterThan(0, \App\Models\Plan::count());
+        $this->assertDatabaseHas('organizations', ['name' => 'Entreprise Test CI']);
+    }
 }

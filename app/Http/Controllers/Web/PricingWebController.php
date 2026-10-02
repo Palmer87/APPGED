@@ -15,6 +15,10 @@ class PricingWebController extends Controller
      */
     public function index(Request $request): Response
     {
+        if (Plan::where('is_active', true)->count() === 0) {
+            (new \Database\Seeders\PlanSeeder())->run();
+        }
+
         $plans = Plan::where('is_active', true)
             ->orderBy('sort_order')
             ->get()

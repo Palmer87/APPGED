@@ -95,6 +95,14 @@ class RegistrationWebController extends Controller
             ->orderBy('sort_order')
             ->get();
 
+        if ($plans->isEmpty()) {
+            (new \Database\Seeders\PlanSeeder())->run();
+            $plans = Plan::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get();
+        }
+
         return Inertia::render('Auth/RegisterPlan', [
             'plans' => $plans,
             'organization' => $request->session()->get('registration.organization'),

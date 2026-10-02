@@ -69,7 +69,12 @@ class RegistrationService
                 // Retrieve chosen plan
                 $plan = Plan::query()->where('slug', $planSlug)->first();
                 if (! $plan) {
-                    $plan = Plan::query()->where('slug', 'essential')->firstOrFail();
+                    $plan = Plan::query()->where('slug', 'essential')->first();
+                }
+                if (! $plan) {
+                    (new \Database\Seeders\PlanSeeder())->run();
+                    $plan = Plan::query()->where('slug', $planSlug)->first()
+                        ?? Plan::query()->where('slug', 'essential')->first();
                 }
 
                 // Generate unique slug for organization
