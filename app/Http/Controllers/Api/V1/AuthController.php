@@ -9,6 +9,8 @@ use App\Services\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -34,6 +36,19 @@ class AuthController extends Controller
 
         $identifier = $validated['login'] ?? $validated['email'] ?? null;
         $phone = $validated['phone'] ?? null;
+        $throttleTarget = $identifier ?? $phone ?? 'unknown';
+        $throttleKey = Str::transliterate(Str::lower($throttleTarget).'|'.$request->ip());
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.throttle', [
+                    'seconds' => $seconds,
+                    'minutes' => ceil($seconds / 60),
+                ]),
+            ]);
+        }
 
         // Query user by email or phone
         $user = User::query()
@@ -49,14 +64,20 @@ class AuthController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
+            RateLimiter::hit($throttleKey);
+
             throw ValidationException::withMessages([
                 'email' => [__('auth.failed')],
             ]);
         }
 
         if ($user->status && $user->status !== 'active') {
+            RateLimiter::hit($throttleKey);
+
             abort(403, 'Account is inactive. Please contact your organization administrator.');
         }
+
+        RateLimiter::clear($throttleKey);
 
         // Update login timestamp
         $user->update(['last_login_at' => now()]);

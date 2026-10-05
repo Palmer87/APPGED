@@ -18,8 +18,24 @@ class StoreAccessScopeRequest extends FormRequest
      */
     public function rules(): array
     {
+        $orgId = $this->user()?->organization_id;
+
+        $userRule = Rule::exists('users', 'id');
+        $directionRule = Rule::exists('directions', 'id');
+        $serviceRule = Rule::exists('services', 'id');
+        $folderRule = Rule::exists('folders', 'id');
+        $documentRule = Rule::exists('documents', 'id');
+
+        if ($orgId) {
+            $userRule->where('organization_id', $orgId);
+            $directionRule->where('organization_id', $orgId);
+            $serviceRule->where('organization_id', $orgId);
+            $folderRule->where('organization_id', $orgId);
+            $documentRule->where('organization_id', $orgId);
+        }
+
         return [
-            'user_id' => ['required', 'integer', 'exists:users,id'],
+            'user_id' => ['required', 'integer', $userRule],
             'scope_type' => ['required', 'string', Rule::enum(AccessScopeType::class)],
             'scope_id' => ['nullable', 'integer'],
 
@@ -27,7 +43,7 @@ class StoreAccessScopeRequest extends FormRequest
             'direction_id' => [
                 'nullable',
                 'integer',
-                'exists:directions,id',
+                $directionRule,
                 'required_if:scope_type,direction',
                 'prohibited_if:scope_type,organization,service,document_type,folder,document',
             ],
@@ -36,7 +52,7 @@ class StoreAccessScopeRequest extends FormRequest
             'service_id' => [
                 'nullable',
                 'integer',
-                'exists:services,id',
+                $serviceRule,
                 'required_if:scope_type,service',
                 'prohibited_if:scope_type,organization,direction,document_type,folder,document',
             ],
@@ -45,7 +61,7 @@ class StoreAccessScopeRequest extends FormRequest
             'folder_id' => [
                 'nullable',
                 'integer',
-                'exists:folders,id',
+                $folderRule,
                 'required_if:scope_type,folder,document_type',
                 'prohibited_if:scope_type,organization,direction,service,document',
             ],
@@ -54,7 +70,7 @@ class StoreAccessScopeRequest extends FormRequest
             'document_id' => [
                 'nullable',
                 'integer',
-                'exists:documents,id',
+                $documentRule,
                 'required_if:scope_type,document',
                 'prohibited_if:scope_type,organization,direction,service,document_type,folder',
             ],

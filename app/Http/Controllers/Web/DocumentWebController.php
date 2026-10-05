@@ -224,9 +224,9 @@ class DocumentWebController extends Controller
             'can_edit' => Gate::forUser($user)->allows('update', $document),
             'can_delete' => Gate::forUser($user)->allows('delete', $document),
             'can_share' => Gate::forUser($user)->allows('share', $document),
-            'can_download' => Gate::forUser($user)->allows('view', $document),
+            'can_download' => Gate::forUser($user)->allows('download', $document),
             'can_version' => Gate::forUser($user)->allows('update', $document),
-            'can_archive' => Gate::forUser($user)->allows('update', $document),
+            'can_archive' => Gate::forUser($user)->allows('archive', $document),
         ];
 
         // Users and groups available for sharing within the organization

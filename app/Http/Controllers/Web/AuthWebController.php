@@ -10,6 +10,8 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -53,6 +55,18 @@ class AuthWebController extends Controller
         ]);
 
         $identifier = $validated['email'];
+        $throttleKey = Str::transliterate(Str::lower($identifier).'|'.$request->ip());
+
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            throw ValidationException::withMessages([
+                'email' => trans('auth.throttle', [
+                    'seconds' => $seconds,
+                    'minutes' => ceil($seconds / 60),
+                ]),
+            ]);
+        }
 
         // Find user by email or phone
         $user = User::query()
@@ -61,16 +75,22 @@ class AuthWebController extends Controller
             ->first();
 
         if (! $user || ! Hash::check($validated['password'], $user->password)) {
+            RateLimiter::hit($throttleKey);
+
             throw ValidationException::withMessages([
                 'email' => [__('auth.failed')],
             ]);
         }
 
         if ($user->status && $user->status !== 'active') {
+            RateLimiter::hit($throttleKey);
+
             throw ValidationException::withMessages([
                 'email' => ['Votre compte est inactif. Veuillez contacter votre administrateur.'],
             ]);
         }
+
+        RateLimiter::clear($throttleKey);
 
         // Authenticate the user for the web guard
         Auth::guard('web')->login($user);

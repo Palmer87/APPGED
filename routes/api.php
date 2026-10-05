@@ -40,7 +40,7 @@ Route::get('/user', function (Request $request) {
 | API Version 1 Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('v1')->group(function () {
+Route::prefix('v1')->middleware('throttle:api')->group(function () {
 
     // Public authentication & plans routes
     Route::prefix('auth')->group(function () {
