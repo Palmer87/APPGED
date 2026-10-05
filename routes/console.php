@@ -8,5 +8,14 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('sanctum:prune-expired --hours=24')->daily();
-Schedule::command('queue:prune-failed --hours=720')->daily();
+Schedule::command('sanctum:prune-expired --hours=24')
+    ->daily()
+    ->onOneServer();
+
+Schedule::command('queue:prune-failed --hours=720')
+    ->daily()
+    ->onOneServer();
+
+Schedule::command('app:process-expiring-subscriptions')
+    ->daily()
+    ->onOneServer();

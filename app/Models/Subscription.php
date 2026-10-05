@@ -124,6 +124,10 @@ class Subscription extends Model
             return true;
         }
 
+        if ($this->status === 'active' && ! $this->auto_renew && $this->current_period_ends_at && $this->current_period_ends_at->isPast()) {
+            return true;
+        }
+
         return false;
     }
 

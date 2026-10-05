@@ -11,8 +11,10 @@ use App\Notifications\SubscriptionActivatedNotification;
 use App\Notifications\SubscriptionCancelledNotification;
 use App\Notifications\SubscriptionExpiredNotification;
 use App\Notifications\SubscriptionPlanChangedNotification;
+use App\Notifications\TrialEndingSoonNotification;
 use App\Services\Billing\Contracts\BillingProviderInterface;
 use App\Services\Billing\Providers\ManualBillingProvider;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Notification;
 
 class BillingService
@@ -533,9 +535,9 @@ class BillingService
     }
 
     /**
-     * Helper to dispatch notifications to admins in an organization.
+     * Dispatch notifications to admins in an organization.
      */
-    protected function notifyAdmins(Organization $organization, \Illuminate\Notifications\Notification $notification): void
+    public function notifyAdmins(Organization $organization, \Illuminate\Notifications\Notification $notification): void
     {
         $admins = User::where('organization_id', $organization->id)
             ->whereHas('roles', function ($q) {
@@ -543,8 +545,107 @@ class BillingService
             })
             ->get();
 
+        if ($admins->isEmpty()) {
+            $fallback = User::where('organization_id', $organization->id)
+                ->where('status', 'active')
+                ->oldest('id')
+                ->first();
+
+            if ($fallback) {
+                $admins = collect([$fallback]);
+            }
+        }
+
         if ($admins->isNotEmpty()) {
             Notification::send($admins, $notification);
         }
+    }
+
+    /**
+     * Check if a trialing subscription is ending soon and send notification once.
+     */
+    public function handleTrialEndingSoon(Subscription $subscription, int $thresholdDays = 3): bool
+    {
+        if (! $subscription->isTrial() || $subscription->isTrialExpired() || ! $subscription->trial_ends_at) {
+            return false;
+        }
+
+        $daysRemaining = $subscription->trialDaysRemaining();
+        if ($daysRemaining <= 0 || $daysRemaining > $thresholdDays) {
+            return false;
+        }
+
+        $trialEndKey = $subscription->trial_ends_at->toDateString();
+        $metadata = $subscription->metadata ?? [];
+
+        if (isset($metadata['trial_ending_soon_notified_for']) && $metadata['trial_ending_soon_notified_for'] === $trialEndKey) {
+            return false;
+        }
+
+        $organization = $subscription->organization ?? $this->resolveOrganization($subscription->organization_id);
+        if ($organization) {
+            $this->notifyAdmins($organization, new TrialEndingSoonNotification($subscription, $daysRemaining));
+        }
+
+        $metadata['trial_ending_soon_notified_for'] = $trialEndKey;
+        $metadata['trial_ending_soon_notified_at'] = now()->toISOString();
+        $subscription->update(['metadata' => $metadata]);
+
+        return true;
+    }
+
+    /**
+     * Process all expiring trials and expired subscriptions across all organizations.
+     *
+     * @return array{expired_count: int, trial_warnings_count: int}
+     */
+    public function processExpiringSubscriptions(): array
+    {
+        $expiredCount = 0;
+        $trialWarningsCount = 0;
+
+        // 1. Process expired subscriptions (trial or paid) that haven't been marked as expired yet
+        $candidateExpired = Subscription::with('organization')
+            ->where('status', '!=', 'expired')
+            ->where(function (Builder $query) {
+                $query->where(function (Builder $q) {
+                    $q->where('status', 'trialing')
+                        ->whereNotNull('trial_ends_at')
+                        ->where('trial_ends_at', '<=', now());
+                })->orWhere(function (Builder $q) {
+                    $q->whereIn('status', ['active', 'cancelled'])
+                        ->whereNotNull('current_period_ends_at')
+                        ->where('current_period_ends_at', '<=', now());
+                });
+            })
+            ->get();
+
+        foreach ($candidateExpired as $subscription) {
+            $org = $subscription->organization;
+            if ($org && $subscription->isExpired()) {
+                $handled = $this->checkAndHandleExpiration($org);
+                if ($handled && $handled->status === 'expired') {
+                    $expiredCount++;
+                }
+            }
+        }
+
+        // 2. Process trialing subscriptions ending soon (<= 3 days remaining)
+        $candidateTrials = Subscription::with('organization')
+            ->where('status', 'trialing')
+            ->whereNotNull('trial_ends_at')
+            ->where('trial_ends_at', '>', now())
+            ->get();
+
+        foreach ($candidateTrials as $subscription) {
+            if ($this->handleTrialEndingSoon($subscription, thresholdDays: 3)) {
+                $trialWarningsCount++;
+            }
+        }
+
+        return [
+            'expired_count' => $expiredCount,
+            'trial_warnings_count' => $trialWarningsCount,
+        ];
     }
 }
