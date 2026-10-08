@@ -523,13 +523,50 @@ class DocumentService
         $allowedExtensions = config('documents.allowed_extensions', []);
         $maxSizeKb = config('documents.max_file_size_kb', 10240);
 
+        $clientOriginalName = $file->getClientOriginalName();
+
+        // 1. Path traversal & null byte check in original filename
+        if (str_contains($clientOriginalName, "\0") || str_contains($clientOriginalName, '..')) {
+            abort(422, 'Invalid file name');
+        }
+
         $extension = strtolower($file->getClientOriginalExtension());
 
         if (! empty($allowedExtensions) && ! in_array($extension, $allowedExtensions, true)) {
             abort(422, "File extension '{$extension}' is not allowed");
         }
 
-        // UploadedFile::getSize() returns bytes
+        // 2. Reject dangerous file extensions (including double extensions)
+        $dangerousExtensions = [
+            'php', 'php3', 'php4', 'php5', 'php7', 'php8', 'phtml', 'phar',
+            'sh', 'bash', 'exe', 'bat', 'cmd', 'cgi', 'pl', 'py', 'js',
+            'vbs', 'jar', 'war', 'jsp', 'asp', 'aspx', 'htm', 'html', 'xhtml', 'svg',
+        ];
+
+        $nameParts = explode('.', strtolower($clientOriginalName));
+        foreach ($nameParts as $part) {
+            if (in_array($part, $dangerousExtensions, true)) {
+                abort(422, 'Dangerous file extension detected');
+            }
+        }
+
+        // 3. Prohibit dangerous executable / HTML MIME types
+        $mimeType = strtolower((string) $file->getMimeType());
+        $dangerousMimes = [
+            'text/x-php',
+            'application/x-httpd-php',
+            'application/x-executable',
+            'application/x-msdos-program',
+            'application/x-sh',
+            'text/html',
+            'application/javascript',
+            'text/javascript',
+        ];
+        if (in_array($mimeType, $dangerousMimes, true)) {
+            abort(422, 'Dangerous MIME type detected');
+        }
+
+        // 4. File size check (UploadedFile::getSize() returns bytes)
         if ($file->getSize() > $maxSizeKb * 1024) {
             abort(422, 'File exceeds the maximum allowed size');
         }
