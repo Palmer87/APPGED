@@ -78,10 +78,7 @@ export default function CollaborationShowcase() {
             {/* Content Column */}
             <div className="lg:col-span-6">
                 <Reveal direction="up" delay={150}>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50/70 px-3.5 py-1.5 text-xs font-semibold text-blue-700 mb-4">
-                        <Zap className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Synergie & Collaboration</span>
-                    </div>
+    
 
                     <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight mb-5">
                         Fédérez vos équipes autour d’un patrimoine documentaire unifié.

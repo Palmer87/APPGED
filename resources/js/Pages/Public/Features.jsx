@@ -152,11 +152,6 @@ export default function Features() {
 
             {/* Hero Section */}
             <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center space-y-6">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Plateforme GED Cloud Tout-en-Un</span>
-                </div>
-
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight">
                     Toutes les fonctionnalités pour maîtriser vos <span className="text-blue-400">documents d'entreprise</span>
                 </h1>
