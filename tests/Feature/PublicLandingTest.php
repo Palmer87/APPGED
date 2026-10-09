@@ -80,4 +80,24 @@ class PublicLandingTest extends TestCase
 
         $response->assertSessionHasErrors(['name', 'email', 'message']);
     }
+
+    public function test_all_landing_images_exist(): void
+    {
+        $images = [
+            'images/landing/avatar-aminata.jpg',
+            'images/landing/avatar-jean.jpg',
+            'images/landing/avatar-sophie.jpg',
+            'images/landing/hero-feature.jpg',
+            'images/landing/ocr-intelligence.jpg',
+            'images/landing/security-architecture.jpg',
+            'images/landing/sector-comptabilite.jpg',
+            'images/landing/sector-rh.jpg',
+            'images/landing/sector-juridique.jpg',
+            'images/landing/sector-admin.jpg',
+        ];
+
+        foreach ($images as $image) {
+            $this->assertFileExists(public_path($image), "L'image {$image} doit exister dans le dossier public.");
+        }
+    }
 }

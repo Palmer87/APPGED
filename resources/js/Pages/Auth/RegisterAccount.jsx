@@ -64,13 +64,12 @@ export default function RegisterAccount({ account = {}, organization = {} }) {
 
                 {/* Main Copy & Trial Value Proposition */}
                 <div className="relative z-10 my-auto py-10 space-y-6">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 backdrop-blur-sm">
-                        <Sparkles className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold text-blue-400 border border-blue-500/20 backdrop-blur-sm">
                         <span>Essai gratuit 14 jours sans engagement</span>
                     </div>
 
                     <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
-                        Passez à la gestion documentaire <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">d'entreprise</span>.
+                        Passez à la gestion documentaire <span className="text-blue-400">d'entreprise</span>.
                     </h1>
 
                     <p className="text-slate-400 text-sm xl:text-base leading-relaxed">

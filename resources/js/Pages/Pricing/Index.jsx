@@ -90,8 +90,7 @@ export default function PricingIndex({ plans = [] }) {
 
             {/* Hero Section */}
             <section className="pt-16 pb-12 text-center px-4 max-w-4xl mx-auto">
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-6">
-                    <Sparkles className="w-3.5 h-3.5" />
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full   text-blue-400 text-xs font-semibold mb-6">
                     <span>14 jours gratuits • Sans engagement • Sans carte bancaire</span>
                 </div>
 
@@ -212,7 +211,7 @@ export default function PricingIndex({ plans = [] }) {
                     </div>
 
                     {/* 2. Plan Professionnel (Highlighted) */}
-                    <div className="rounded-3xl bg-gradient-to-b from-blue-950/60 to-slate-900 border-2 border-blue-500 shadow-2xl shadow-blue-500/10 p-8 flex flex-col justify-between relative transform lg:-translate-y-2">
+                    <div className="rounded-3xl bg-slate-900 border-2 border-blue-500 shadow-2xl shadow-blue-500/10 p-8 flex flex-col justify-between relative transform lg:-translate-y-2">
                         {/* Popular Badge */}
                         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-blue-600 text-white text-[11px] font-extrabold px-3.5 py-1 rounded-full uppercase tracking-wider shadow-md shadow-blue-600/30 flex items-center gap-1.5">
                             <Crown className="w-3.5 h-3.5 text-amber-300" />

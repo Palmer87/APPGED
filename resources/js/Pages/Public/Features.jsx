@@ -27,84 +27,84 @@ export default function Features() {
     const features = [
         {
             icon: Folder,
-            color: 'from-blue-600 to-indigo-600',
+            color: 'bg-blue-600',
             title: 'Organisation Multi-Tenant & Structure Métier',
             description: 'Structurez vos archives selon la hiérarchie réelle de votre entreprise : Organisation → Direction → Service → Type documentaire.',
             badge: 'Structure'
         },
         {
             icon: Search,
-            color: 'from-indigo-600 to-violet-600',
+            color: 'bg-indigo-600',
             title: 'Moteur de Recherche Avancé & Filtres',
             description: 'Retrouvez n\'importe quel document instantanément grâce à la recherche plein texte, le filtrage par métadonnées, dates et services.',
             badge: 'Recherche'
         },
         {
             icon: Cpu,
-            color: 'from-violet-600 to-purple-600',
+            color: 'bg-violet-600',
             title: 'OCR Tesseract Automatique',
             description: 'Numérisez vos factures, contrats et courriers scannés. Le texte est extrait automatiquement et indexé sans intervention humaine.',
             badge: 'Intelligence'
         },
         {
             icon: GitCommit,
-            color: 'from-emerald-600 to-teal-600',
+            color: 'bg-emerald-600',
             title: 'Versioning Documentaire & Historique',
             description: 'Gardez un historique inviolable de chaque modification. Comparez, téléchargez ou restaurez une révision antérieure en un clic.',
             badge: 'Versioning'
         },
         {
             icon: Share2,
-            color: 'from-amber-500 to-orange-600',
+            color: 'bg-amber-600',
             title: 'Partage Sécurisé & Périmètres d\'Accès',
             description: 'Partagez des documents en interne avec des permissions précises (lecture, écriture, téléchargement) et des liens temporaires protégés.',
             badge: 'Collaboration'
         },
         {
             icon: CheckSquare,
-            color: 'from-sky-600 to-blue-600',
+            color: 'bg-sky-600',
             title: 'Circuits de Validation & Workflows',
             description: 'Automatisez la circulation et la signature de vos documents administratifs avec des circuits d\'approbation étape par étape.',
             badge: 'Automatisation'
         },
         {
             icon: History,
-            color: 'from-rose-600 to-pink-600',
+            color: 'bg-rose-600',
             title: 'Journal d\'Audit & Traçabilité Complète',
             description: 'Chaque consultation, modification, téléchargement ou suppression est horodatée avec l\'adresse IP et l\'auteur de l\'action.',
             badge: 'Conformité'
         },
         {
             icon: Bell,
-            color: 'from-yellow-500 to-amber-600',
+            color: 'bg-amber-500',
             title: 'Notifications & Alertes en Temps Réel',
             description: 'Soyez notifié dès qu\'un document requiert votre signature, qu\'une échéance approche ou qu\'un dossier partagé est mis à jour.',
             badge: 'Productivité'
         },
         {
             icon: Trash2,
-            color: 'from-slate-600 to-slate-800',
+            color: 'bg-slate-700',
             title: 'Corbeille Sécurisée & Restauration',
             description: 'Évitez les pertes de données accidentelles avec une corbeille protégée permettant la restauration immédiate par les administrateurs.',
             badge: 'Sécurité'
         },
         {
             icon: Archive,
-            color: 'from-teal-600 to-emerald-600',
+            color: 'bg-teal-600',
             title: 'Archivage Légal & Rétention',
             description: 'Conservez vos documents critiques dans un état figé et inaltérable selon vos règles de conservation juridique.',
             badge: 'Pérénité'
         },
         {
             icon: Sliders,
-            color: 'from-purple-600 to-indigo-600',
+            color: 'bg-purple-600',
             title: 'Schémas de Métadonnées Personnalisés',
             description: 'Enrichissez vos documents avec des champs sur-mesure typés (numéro de facture, montant, date d\'échéance, client).',
             badge: 'Indexation'
         },
         {
             icon: Lock,
-            color: 'from-blue-700 to-indigo-800',
+            color: 'bg-blue-700',
             title: 'Contrôle d\'Accès par Rôles (RBAC) & Teams',
             description: 'Garantissez une étanchéité parfaite de vos informations avec le système Spatie Teams et les périmètres d\'accès par direction.',
             badge: 'Gouvernance'
@@ -119,7 +119,7 @@ export default function Features() {
             <header className="border-b border-slate-800/80 bg-[#0B132B]/90 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 shrink-0 group-hover:scale-105 transition-transform">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                             GED
                         </div>
                         <span className="font-black text-xl tracking-tight text-white">
@@ -141,7 +141,7 @@ export default function Features() {
                         </Link>
                         <Link
                             href="/inscription"
-                            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition shadow-lg shadow-blue-600/30"
+                            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition"
                         >
                             <span>Essai gratuit 14j</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -158,7 +158,7 @@ export default function Features() {
                 </div>
 
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight max-w-4xl mx-auto leading-tight">
-                    Toutes les fonctionnalités pour maîtriser vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">documents d'entreprise</span>
+                    Toutes les fonctionnalités pour maîtriser vos <span className="text-blue-400">documents d'entreprise</span>
                 </h1>
 
                 <p className="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto">
@@ -168,7 +168,7 @@ export default function Features() {
                 <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Link
                         href="/inscription"
-                        className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 transition flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition flex items-center justify-center gap-2"
                     >
                         <span>Démarrer l'essai gratuit</span>
                         <ArrowRight className="w-4 h-4" />
@@ -194,7 +194,7 @@ export default function Features() {
                             >
                                 <div>
                                     <div className="flex items-center justify-between mb-6">
-                                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${feat.color} flex items-center justify-center text-white shadow-lg`}>
+                                        <div className={`w-12 h-12 rounded-2xl ${feat.color} flex items-center justify-center text-white`}>
                                             <Icon className="w-6 h-6" />
                                         </div>
                                         <span className="text-[11px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
@@ -216,7 +216,7 @@ export default function Features() {
 
             {/* Security Callout */}
             <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-                <div className="bg-gradient-to-r from-blue-900/40 via-indigo-900/40 to-slate-900/60 border border-blue-500/20 rounded-3xl p-8 sm:p-12 text-center space-y-6">
+                <div className="bg-slate-900 border border-blue-500/20 rounded-3xl p-8 sm:p-12 text-center space-y-6">
                     <div className="w-14 h-14 rounded-2xl bg-blue-600/20 text-blue-400 flex items-center justify-center mx-auto border border-blue-500/30">
                         <ShieldCheck className="w-8 h-8" />
                     </div>
@@ -229,7 +229,7 @@ export default function Features() {
                     <div className="pt-2">
                         <Link
                             href="/inscription"
-                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition shadow-lg shadow-blue-600/20"
+                            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition"
                         >
                             <span>Créer votre espace entreprise</span>
                             <ArrowRight className="w-4 h-4" />

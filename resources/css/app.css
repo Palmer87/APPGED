@@ -9,4 +9,170 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
     --font-handwriting: 'Caveat', cursive, sans-serif;
+
+    /* Landing page palette */
+    --color-night: #0b1220;
+    --color-night-soft: #111a2e;
+    --color-ink: #475569;
+}
+
+/* ==========================================================================
+   Landing page motion system (prefix "lp-")
+   Only transform / opacity are animated. Everything is disabled when the
+   visitor asks for reduced motion.
+   ========================================================================== */
+
+@keyframes lp-rise {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 24px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes lp-pop {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 16px, 0) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+@keyframes lp-fade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes lp-float {
+    0%,
+    100% {
+        transform: translate3d(0, 0, 0);
+    }
+    50% {
+        transform: translate3d(0, -10px, 0);
+    }
+}
+
+@keyframes lp-pulse-ring {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+}
+
+@keyframes lp-caret {
+    50% {
+        opacity: 0;
+    }
+}
+
+/* Load-time entrance (hero) */
+.lp-enter {
+    animation: lp-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--lp-delay, 0ms);
+}
+
+.lp-enter-pop {
+    animation: lp-pop 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--lp-delay, 0ms);
+}
+
+.lp-enter-fade {
+    animation: lp-fade 1.2s ease-out both;
+    animation-delay: var(--lp-delay, 0ms);
+}
+
+/* Scroll reveal */
+.lp-reveal {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0);
+    transition:
+        opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+        translate 0.3s ease,
+        box-shadow 0.3s ease;
+    transition-delay: var(--lp-delay, 0ms), var(--lp-delay, 0ms), 0ms, 0ms;
+}
+
+.lp-reveal.is-visible {
+    opacity: 1;
+    transform: none;
+}
+
+/* Gentle floating decoration (desktop only) */
+.lp-float {
+    animation: lp-float 7s ease-in-out infinite;
+    animation-delay: var(--lp-delay, 0ms);
+}
+
+.lp-pulse-ring {
+    animation: lp-pulse-ring 2.4s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.lp-caret {
+    animation: lp-caret 1s steps(1) infinite;
+}
+
+/* Generic motion helper for JS driven demos */
+.lp-move {
+    transition:
+        transform 0.9s cubic-bezier(0.65, 0, 0.35, 1),
+        opacity 0.6s ease;
+}
+
+.lp-grid-bg {
+    background-image:
+        linear-gradient(to right, rgb(148 163 184 / 0.07) 1px, transparent 1px),
+        linear-gradient(to bottom, rgb(148 163 184 / 0.07) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 40%, transparent 100%);
+}
+
+.lp-text-gradient {
+    color: #38bdf8;
+}
+
+@media (max-width: 767px) {
+    .lp-float {
+        animation: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto !important;
+    }
+
+    .lp-enter,
+    .lp-enter-pop,
+    .lp-enter-fade,
+    .lp-float,
+    .lp-pulse-ring,
+    .lp-caret {
+        animation: none !important;
+    }
+
+    .lp-reveal {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .lp-move {
+        transition: none !important;
+    }
 }

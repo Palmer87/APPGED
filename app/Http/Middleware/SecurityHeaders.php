@@ -53,13 +53,17 @@ class SecurityHeaders
     {
         $isLocal = app()->environment('local');
 
-        // Local development allows Vite HMR client and websockets
+        // Local development allows Vite HMR client (IPv4/IPv6 [::1]), React Refresh inline scripts, stylesheets and websockets
         $scriptSrc = $isLocal
-            ? "'self' 'unsafe-eval' http://localhost:5173 http://127.0.0.1:5173"
+            ? "'self' 'unsafe-eval' 'unsafe-inline' http: ws:"
             : "'self'";
 
+        $styleSrc = $isLocal
+            ? "'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com http:"
+            : "'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com";
+
         $connectSrc = $isLocal
-            ? "'self' https://fonts.bunny.net https://fonts.googleapis.com http://localhost:5173 ws://localhost:5173 http://127.0.0.1:5173 ws://127.0.0.1:5173"
+            ? "'self' https://fonts.bunny.net https://fonts.googleapis.com http: ws:"
             : "'self' https://fonts.bunny.net https://fonts.googleapis.com";
 
         // Directives breakdown:
@@ -77,7 +81,7 @@ class SecurityHeaders
         $directives = [
             "default-src 'self'",
             "script-src {$scriptSrc}",
-            "style-src 'self' 'unsafe-inline' https://fonts.bunny.net https://fonts.googleapis.com",
+            "style-src {$styleSrc}",
             "font-src 'self' https://fonts.bunny.net https://fonts.gstatic.com data:",
             "img-src 'self' data: blob: https:",
             "media-src 'self' data: blob:",

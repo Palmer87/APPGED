@@ -37,7 +37,7 @@ export default function Contact() {
             <header className="border-b border-slate-800/80 bg-[#0B132B]/90 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 shrink-0 group-hover:scale-105 transition-transform">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                             GED
                         </div>
                         <span className="font-black text-xl tracking-tight text-white">
@@ -59,7 +59,7 @@ export default function Contact() {
                         </Link>
                         <Link
                             href="/inscription"
-                            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition shadow-lg shadow-blue-600/30"
+                            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition"
                         >
                             <span>Essai gratuit 14j</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -72,7 +72,7 @@ export default function Contact() {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
                 <div className="text-center space-y-4 max-w-2xl mx-auto">
                     <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-                        Nous sommes à votre <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">écoute</span>
+                        Nous sommes à votre <span className="text-blue-400">écoute</span>
                     </h1>
                     <p className="text-slate-400 text-sm sm:text-base">
                         Une question sur la plateforme, besoin d'aide pour votre déploiement ou d'un devis sur-mesure ? Écrivez-nous.
@@ -127,7 +127,7 @@ export default function Contact() {
                     </div>
 
                     {/* Right Form Column */}
-                    <div className="md:col-span-7 bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-10 shadow-xl">
+                    <div className="md:col-span-7 bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-10">
                         <h3 className="text-xl font-bold text-white mb-6">Envoyez-nous un message</h3>
 
                         {recentlySuccessful && (
@@ -201,7 +201,7 @@ export default function Contact() {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 transition disabled:opacity-60"
+                                className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm  flex items-center justify-center gap-2 transition disabled:opacity-60"
                             >
                                 <Send className="w-4 h-4" />
                                 <span>Envoyer mon message</span>

@@ -74,10 +74,6 @@ export default function Login() {
 
                 {/* Middle: Value Proposition & 3 Pillars */}
                 <div className="relative z-10 my-auto py-12 max-w-lg">
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-800/50 text-indigo-300 text-xs font-semibold mb-6">
-                        <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                        Environnement d'Entreprise Sécurisé
-                    </div>
 
                     <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight mb-4">
                         Votre espace documentaire, centralisé, sécurisé et organisé.

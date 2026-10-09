@@ -2,13 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\Direction;
 use App\Models\Document;
 use App\Models\DocumentVersion;
-use App\Models\Folder;
 use App\Models\Organization;
+use App\Models\Plan;
 use App\Models\PlatformUser;
-use App\Models\Service;
+use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\PlanSeeder;
 use Database\Seeders\RolePermissionSeeder;
@@ -76,9 +75,9 @@ class SecurityHardeningZapTest extends TestCase
         $this->userB->assignRole($adminRoleB);
 
         // Create active subscription for orgA
-        $plan = \App\Models\Plan::first();
+        $plan = Plan::first();
         if ($plan) {
-            \App\Models\Subscription::create([
+            Subscription::create([
                 'organization_id' => $this->orgA->id,
                 'plan_id' => $plan->id,
                 'status' => 'active',

@@ -45,7 +45,7 @@ export default function Enterprise({ prefill = {} }) {
             <header className="border-b border-slate-800/80 bg-[#0B132B]/90 backdrop-blur-md sticky top-0 z-40">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
                     <Link href="/" className="flex items-center gap-3 group">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/25 shrink-0 group-hover:scale-105 transition-transform">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0 group-hover:scale-105 transition-transform">
                             GED
                         </div>
                         <span className="font-black text-xl tracking-tight text-white">
@@ -67,7 +67,7 @@ export default function Enterprise({ prefill = {} }) {
                         </Link>
                         <Link
                             href="/inscription"
-                            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition shadow-lg shadow-blue-600/30"
+                            className="inline-flex items-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold bg-blue-600 hover:bg-blue-500 text-white transition"
                         >
                             <span>Essai gratuit 14j</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -80,13 +80,13 @@ export default function Enterprise({ prefill = {} }) {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
                 {/* Intro */}
                 <div className="text-center space-y-4 max-w-3xl mx-auto">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        <Crown className="w-3.5 h-3.5" />
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold  text-bleu-400 border border-bleu-500/20">
+
                         <span>Formule Grands Comptes & Administrations</span>
                     </div>
 
                     <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-                        Une GED haute performance façonnée pour vos <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">exigences d'entreprise</span>
+                        Une GED haute performance façonnée pour vos exigences d'entreprise
                     </h1>
 
                     <p className="text-slate-400 text-base sm:text-lg">
@@ -100,13 +100,13 @@ export default function Enterprise({ prefill = {} }) {
                     <div className="lg:col-span-6 space-y-6">
                         <div className="bg-slate-900/60 border border-slate-800/80 rounded-3xl p-8 space-y-6">
                             <h3 className="text-xl font-bold text-white flex items-center gap-2.5">
-                                <Sparkles className="w-5 h-5 text-amber-400" />
+                                <Sparkles className="w-5 h-5 text-bleu-400" />
                                 <span>Inclus dans l'offre Enterprise :</span>
                             </h3>
 
                             <div className="space-y-4 text-sm text-slate-300">
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-bleu-500/20 text-bleu-400 flex items-center justify-center shrink-0 mt-0.5">
                                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                                     </div>
                                     <div>
@@ -116,7 +116,7 @@ export default function Enterprise({ prefill = {} }) {
                                 </div>
 
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-bleu-500/20 text-bleu-400 flex items-center justify-center shrink-0 mt-0.5">
                                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                                     </div>
                                     <div>
@@ -126,7 +126,7 @@ export default function Enterprise({ prefill = {} }) {
                                 </div>
 
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-bleu-500/20 text-bleu-400 flex items-center justify-center shrink-0 mt-0.5">
                                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                                     </div>
                                     <div>
@@ -136,7 +136,7 @@ export default function Enterprise({ prefill = {} }) {
                                 </div>
 
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-bleu-500/20 text-bleu-400 flex items-center justify-center shrink-0 mt-0.5">
                                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                                     </div>
                                     <div>
@@ -146,7 +146,7 @@ export default function Enterprise({ prefill = {} }) {
                                 </div>
 
                                 <div className="flex items-start gap-3">
-                                    <div className="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                                    <div className="w-6 h-6 rounded-full bg-bleu-500/20 text-bleu-400 flex items-center justify-center shrink-0 mt-0.5">
                                         <Check className="w-3.5 h-3.5 stroke-[3]" />
                                     </div>
                                     <div>
@@ -166,7 +166,7 @@ export default function Enterprise({ prefill = {} }) {
                     </div>
 
                     {/* Right Column : Demo & Commercial Lead Form */}
-                    <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-10 shadow-2xl relative">
+                    <div className="lg:col-span-6 bg-slate-900/90 border border-slate-800 rounded-3xl p-8 sm:p-10 relative">
                         <h3 className="text-2xl font-black text-white mb-2">
                             Demander une démonstration
                         </h3>
@@ -305,7 +305,7 @@ export default function Enterprise({ prefill = {} }) {
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 transition disabled:opacity-60"
+                                className="w-full py-3.5 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition disabled:opacity-60"
                             >
                                 <Send className="w-4 h-4" />
                                 <span>Envoyer ma demande de démonstration</span>
