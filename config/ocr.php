@@ -73,6 +73,82 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Poppler pdftoppm Binary Path
+    |--------------------------------------------------------------------------
+    |
+    | Path to the pdftoppm executable for rasterizing PDF pages to images.
+    |
+    */
+    'pdftoppm_path' => env('OCR_PDFTOPPM_PATH', 'pdftoppm'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Poppler pdftotext Binary Path
+    |--------------------------------------------------------------------------
+    |
+    | Path to the pdftotext executable for native PDF stream text extraction.
+    |
+    */
+    'pdftotext_path' => env('OCR_PDFTOTEXT_PATH', 'pdftotext'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Poppler pdfinfo Binary Path
+    |--------------------------------------------------------------------------
+    |
+    | Path to the pdfinfo executable for inspecting PDF page counts and metadata.
+    |
+    */
+    'pdfinfo_path' => env('OCR_PDFINFO_PATH', 'pdfinfo'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | PDF Rasterization DPI
+    |--------------------------------------------------------------------------
+    |
+    | Resolution (dots per inch) for converting PDF pages to images.
+    | Default is 200 DPI, offering an optimal trade-off between OCR accuracy and memory.
+    |
+    */
+    'dpi' => (int) env('OCR_DPI', 200),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Maximum Pages per PDF
+    |--------------------------------------------------------------------------
+    |
+    | Maximum number of pages to process per PDF to prevent resource exhaustion.
+    |
+    */
+    'max_pages' => (int) env('OCR_MAX_PAGES', 50),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Native Extraction Timeout (seconds per page / step)
+    |--------------------------------------------------------------------------
+    */
+    'native_timeout' => (int) env('OCR_NATIVE_TIMEOUT', 15),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conversion Timeout (seconds per page rasterization)
+    |--------------------------------------------------------------------------
+    */
+    'conversion_timeout' => (int) env('OCR_CONVERSION_TIMEOUT', 60),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Minimum Characters for Valid Native Page Text
+    |--------------------------------------------------------------------------
+    |
+    | Pages with fewer significant characters than this threshold will be
+    | treated as scanned / image-based and processed via Tesseract OCR.
+    |
+    */
+    'min_native_text_length' => (int) env('OCR_MIN_NATIVE_TEXT_LENGTH', 15),
+
+    /*
+    |--------------------------------------------------------------------------
     | Skipped File Extensions
     |--------------------------------------------------------------------------
     |

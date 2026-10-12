@@ -92,11 +92,13 @@ class OcrService
             abort(422, 'La version spécifiée n\'appartient pas à ce document.');
         }
 
+        $targetVersion = $version ?? $document->currentVersion;
+
         // Initialize or update OCR tracking record to Pending
         $ocr = DocumentOcr::updateOrCreate(
             [
                 'document_id' => $document->id,
-                'document_version_id' => $version?->id,
+                'document_version_id' => $targetVersion?->id,
             ],
             [
                 'organization_id' => $document->organization_id,
@@ -106,7 +108,7 @@ class OcrService
         );
 
         // Dispatch background job
-        ProcessDocumentOcr::dispatch($document, $version);
+        ProcessDocumentOcr::dispatch($document, $targetVersion);
 
         return $ocr;
     }
